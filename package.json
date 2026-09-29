@@ -1,0 +1,41 @@
+{
+  "name": "pagamejor",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "validate-data": "node scripts/validate-data.js",
+    "test:logic": "node tests/logic/run-tests.js",
+    "monitor:cuentadni": "node scripts/monitors/cuentadni.js",
+    "monitor:uala": "node scripts/monitors/uala.js",
+    "monitor:mercadopago": "node scripts/monitors/mercadopago.js",
+    "monitor:modo": "node scripts/monitors/modo.js",
+    "monitor:naranjax": "node scripts/monitors/naranjax.js",
+    "monitor:galicia": "node scripts/monitors/galicia.js",
+    "monitor:patagonia": "node scripts/monitors/patagonia.js",
+    "monitor:supervielle": "node scripts/monitors/supervielle.js",
+    "monitor:status": "node scripts/monitors/monthly-check.js",
+    "monitor:all": "node scripts/monitors/monthly-check.js --run",
+    "monitor:monthly": "node scripts/monitors/monthly-check.js --run --if-first-business-day",
+    "apply:extract": "node scripts/data/apply-extract.js"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "lucide-react": "^1.16.0",
+    "next": "^15.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "cheerio": "^1.2.0",
+    "playwright": "^1.63.0",
+    "typescript": "^5.7.3"
+  }
+}
