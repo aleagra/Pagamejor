@@ -1,0 +1,94 @@
+[
+  {
+    "id": "cuentadni",
+    "nombre": "Cuenta DNI",
+    "url": "https://www.bancoprovincia.com.ar/cuentadni/contenidos/cdniBeneficios/",
+    "metodo": "Estática + API de detalle (GetBeneficioData2)",
+    "script": "scripts/monitors/cuentadni.js",
+    "manual": false,
+    "notas": "Vigencia del texto legal; variantes NFC/cuenta parseadas de las cláusulas numeradas. Las promos son mensuales: se renuevan el día 1."
+  },
+  {
+    "id": "uala",
+    "nombre": "Ualá",
+    "url": "https://www.uala.com.ar/promociones",
+    "metodo": "Estática (listado + detalle por promo)",
+    "script": "scripts/monitors/uala.js",
+    "manual": false,
+    "notas": "Días del selector LMMJVSD (clase bg-blue-250). Casi todo es online/suscripción de un solo uso: se ignora y queda documentado."
+  },
+  {
+    "id": "modo",
+    "nombre": "MODO",
+    "url": "https://www.modo.com.ar/promos",
+    "metodo": "API JSON pública (no requiere Playwright)",
+    "script": "scripts/monitors/modo.js",
+    "manual": false,
+    "notas": "Presencia en Mar del Plata verificada con el mapa de comercios de MODO. Las que MODO no publica con locales quedan inactivas para verificar a mano."
+  },
+  {
+    "id": "naranjax",
+    "nombre": "Naranja X",
+    "url": "https://www.naranjax.com/promociones",
+    "metodo": "API BFF JSON (Playwright bloqueado por Cloudflare)",
+    "script": "scripts/monitors/naranjax.js",
+    "manual": false,
+    "notas": "Se ignoran cuotas y 'Exclusiva Plan Turbo'. Presencia en MdP no verificable: solo cadenas nacionales (common.js > PRESENCIA_MDP)."
+  },
+  {
+    "id": "galicia",
+    "nombre": "Banco Galicia",
+    "url": "https://www.galicia.ar/personas/buscador-de-promociones",
+    "metodo": "API BFF JSON con filtro Localidad=MAR DEL PLATA",
+    "script": "scripts/monitors/galicia.js",
+    "manual": false,
+    "notas": "Endpoint identificado con DevTools > Network. El WAF rechaza parámetros desconocidos y ráfagas: no agregar filtros sin probarlos."
+  },
+  {
+    "id": "patagonia",
+    "nombre": "Banco Patagonia",
+    "url": "https://ahorrosybeneficios.bancopatagonia.com.ar/",
+    "metodo": "Estática (Magento, por categoría, 3 niveles Clásica/Plus/Singular)",
+    "script": "scripts/monitors/patagonia.js",
+    "manual": false,
+    "notas": "Se excluyen Río Negro/otras provincias, Plan Sueldo y usuarios nuevos. Presencia en MdP no verificable: solo cadenas nacionales."
+  },
+  {
+    "id": "supervielle",
+    "nombre": "Banco Supervielle",
+    "url": "https://www.supervielle.com.ar/personas/beneficios/descuentos",
+    "metodo": "Estática (sub-páginas por rubro y /identite con __NEXT_DATA__)",
+    "script": "scripts/monitors/supervielle.js",
+    "manual": false,
+    "notas": "Dos niveles Clásico/Identité. Se ignoran Plan Sueldo y Jubilados. Presencia en MdP no verificable: solo cadenas nacionales."
+  },
+  {
+    "id": "mercadopago",
+    "nombre": "Mercado Pago (pública)",
+    "url": "https://promociones.mercadopago.com.ar/",
+    "metodo": "Estática",
+    "script": "scripts/monitors/mercadopago.js",
+    "manual": false,
+    "notas": "Vigencia SIEMPRE del 'Legales' de cada card. Al 2026-09-29 todas las cards estaban vencidas (mayo) o eran solo cuotas."
+  },
+  {
+    "id": "mercadopago-app",
+    "nombre": "Mercado Pago (app logueada: 'Explorá tus beneficios')",
+    "url": "app Mercado Pago > Explorá tus beneficios",
+    "metodo": "MANUAL por capturas (sin API ni scraping legítimo). No usar el asistente 'Mago'.",
+    "script": null,
+    "manual": true,
+    "recordatorio": "Entrá a la app de Mercado Pago > 'Explorá tus beneficios' y mandá capturas nuevas HOY (comercio, %, días, tope, mínimo, vigencia). Las 15 promos mp-* cargadas tienen vigencia 2026-12-31 sin verificar.",
+    "notas": "Las promos mp-* tienen fuenteId 'mercadopago-app'."
+  },
+  {
+    "id": "legacy-manual",
+    "nombre": "Promos manuales sin fuente automatizada (Personal Pay, Banco Provincia)",
+    "url": "capturas propias",
+    "metodo": "MANUAL por capturas",
+    "script": null,
+    "manual": true,
+    "recordatorio": "Personal Pay (personal-pay-*) y Banco Provincia (bapro-indumentaria-vie-sab) no tienen extractor: si siguen siendo de interés, mandá capturas nuevas ese día; sus vigencias (2026-12-31) están sin verificar.",
+    "notas": "También aplica a cualquier banco fuera de las 8 fuentes (BNA, Macro, ICBC, Santander, BBVA...): sus promos vía MODO quedaron inactivas hasta verificarlas."
+  }
+]
