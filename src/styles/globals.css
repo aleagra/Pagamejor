@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-bg: #FBF9F5;
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #F6F2EA;
+  --color-surface-active: #EFE9DE;
+
+  --color-text-main: #1A202C;
+  --color-text-secondary: #3D4852;
+  --color-text-muted: #64748B;
+
+  --color-forest: #1E6B48;
+  --color-forest-bg: #EAF4EE;
+  --color-forest-border: #9ED4B5;
+
+  --color-terracotta: #B44D25;
+  --color-terracotta-bg: #FDF1EA;
+  --color-terracotta-border: #F0C4B0;
+
+  --color-border-subtle: #E5DFD5;
+  --color-border-strong: #CDC4B5;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-brand-bg);
+  color: var(--color-text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+button, a {
+  touch-action: manipulation;
+}
+
+button:focus-visible, a:focus-visible {
+  outline: 3px solid var(--color-forest);
+  outline-offset: 2px;
+}

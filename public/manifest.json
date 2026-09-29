@@ -1,0 +1,18 @@
+{
+  "name": "PagaMejor | Ahorrá con tus tarjetas",
+  "short_name": "PagaMejor",
+  "description": "¿Con qué tarjeta te conviene pagar hoy en Argentina para maximizar descuentos bancarios?",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FBF9F5",
+  "theme_color": "#1E6B48",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
