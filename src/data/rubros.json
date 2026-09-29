@@ -1,0 +1,93 @@
+[
+  {
+    "id": "supermercado",
+    "nombre": "Supermercados",
+    "icono": "🛒",
+    "descripcion": "Hipermercados, autoservicios y almacenes adheridos",
+    "esDestacado": true
+  },
+  {
+    "id": "combustible",
+    "nombre": "Combustible",
+    "icono": "⛽",
+    "descripcion": "Estaciones de servicio YPF, Shell, Axion y Puma",
+    "esDestacado": true
+  },
+  {
+    "id": "carniceria",
+    "nombre": "Carnicerías",
+    "icono": "🥩",
+    "descripcion": "Carnicerías, granjas y pescaderías de barrio",
+    "esDestacado": true
+  },
+  {
+    "id": "farmacia",
+    "nombre": "Farmacias",
+    "icono": "💊",
+    "descripcion": "Medicamentos, farmacias y perfumerías",
+    "esDestacado": true
+  },
+  {
+    "id": "gastronomia",
+    "nombre": "Gastronomía",
+    "icono": "🍽️",
+    "descripcion": "Restaurantes, cafeterías, bares y locales de comida",
+    "esDestacado": true
+  },
+  {
+    "id": "indumentaria",
+    "nombre": "Indumentaria",
+    "icono": "👕",
+    "descripcion": "Ropa, calzado y tiendas de moda deportiva o casual",
+    "esDestacado": true
+  },
+  {
+    "id": "libreria",
+    "nombre": "Librerías y Jugueterías",
+    "icono": "📚",
+    "descripcion": "Librerías comerciales, escolares, textos y jugueterías",
+    "esDestacado": false
+  },
+  {
+    "id": "hogar",
+    "nombre": "Hogar y Construcción",
+    "icono": "🔨",
+    "descripcion": "Ferreterías, pinturerías, corralones y tiendas de hogar",
+    "esDestacado": false
+  },
+  {
+    "id": "mayorista",
+    "nombre": "Mayoristas",
+    "icono": "📦",
+    "descripcion": "Hipermercados mayoristas y distribuidores",
+    "esDestacado": false
+  },
+  {
+    "id": "mascotas",
+    "nombre": "Mascotas y Veterinarias",
+    "icono": "🐾",
+    "descripcion": "Alimentos para mascotas, pet shops y clínicas veterinarias",
+    "esDestacado": false
+  },
+  {
+    "id": "tecnologia",
+    "nombre": "Tecnología y Electro",
+    "icono": "📱",
+    "descripcion": "Computación, telefonía, electrodomésticos y audio",
+    "esDestacado": false
+  },
+  {
+    "id": "entretenimiento",
+    "nombre": "Cines y Espectáculos",
+    "icono": "🎬",
+    "descripcion": "Entradas de cine, teatro, parques y eventos culturales",
+    "esDestacado": false
+  },
+  {
+    "id": "otros",
+    "nombre": "Otros Comercios",
+    "icono": "🛍️",
+    "descripcion": "Comercios generales de cercanía y ferias",
+    "esDestacado": false
+  }
+]

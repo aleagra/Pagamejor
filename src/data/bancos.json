@@ -1,0 +1,193 @@
+[
+  {
+    "id": "cuenta-dni",
+    "nombre": "Cuenta DNI",
+    "tipo": "billetera",
+    "colorPrimario": "#009B3A",
+    "colorTexto": "#FFFFFF",
+    "siglas": "CDNI"
+  },
+  {
+    "id": "galicia",
+    "nombre": "Banco Galicia",
+    "tipo": "banco",
+    "colorPrimario": "#E85D04",
+    "colorTexto": "#FFFFFF",
+    "siglas": "GAL",
+    "adheridoAModo": true
+  },
+  {
+    "id": "santander",
+    "nombre": "Banco Santander",
+    "tipo": "banco",
+    "colorPrimario": "#CC0000",
+    "colorTexto": "#FFFFFF",
+    "siglas": "SAN",
+    "adheridoAModo": true
+  },
+  {
+    "id": "banco-nacion",
+    "nombre": "Banco Nación (BNA)",
+    "tipo": "banco",
+    "colorPrimario": "#005691",
+    "colorTexto": "#FFFFFF",
+    "siglas": "BNA",
+    "adheridoAModo": true
+  },
+  {
+    "id": "bbva",
+    "nombre": "Banco BBVA",
+    "tipo": "banco",
+    "colorPrimario": "#14549C",
+    "colorTexto": "#FFFFFF",
+    "siglas": "BBVA",
+    "adheridoAModo": true
+  },
+  {
+    "id": "mercado-pago",
+    "nombre": "Mercado Pago",
+    "tipo": "billetera",
+    "colorPrimario": "#009EE3",
+    "colorTexto": "#FFFFFF",
+    "siglas": "MP"
+  },
+  {
+    "id": "modo",
+    "nombre": "MODO",
+    "tipo": "billetera",
+    "colorPrimario": "#118AB2",
+    "colorTexto": "#FFFFFF",
+    "siglas": "MODO",
+    "nota": "Necesitás una tarjeta de un banco adherido vinculada a MODO. Si tildás un banco adherido (Galicia, Santander, Macro, etc.), las promos de MODO aparecen solas."
+  },
+  {
+    "id": "personal-pay",
+    "nombre": "Personal Pay",
+    "tipo": "billetera",
+    "colorPrimario": "#6A0572",
+    "colorTexto": "#FFFFFF",
+    "siglas": "PPAY"
+  },
+  {
+    "id": "naranja-x",
+    "nombre": "Naranja X",
+    "tipo": "billetera",
+    "colorPrimario": "#FF6B35",
+    "colorTexto": "#FFFFFF",
+    "siglas": "NX"
+  },
+  {
+    "id": "banco-provincia",
+    "nombre": "Banco Provincia (BAPRO)",
+    "tipo": "banco",
+    "colorPrimario": "#1A7431",
+    "colorTexto": "#FFFFFF",
+    "siglas": "BAPRO"
+  },
+  {
+    "id": "banco-macro",
+    "nombre": "Banco Macro",
+    "tipo": "banco",
+    "colorPrimario": "#003057",
+    "colorTexto": "#FFFFFF",
+    "siglas": "MAC",
+    "adheridoAModo": true
+  },
+  {
+    "id": "banco-ciudad",
+    "nombre": "Banco Ciudad",
+    "tipo": "banco",
+    "colorPrimario": "#E63946",
+    "colorTexto": "#FFFFFF",
+    "siglas": "CIU",
+    "adheridoAModo": true
+  },
+  {
+    "id": "banco-credicoop",
+    "nombre": "Banco Credicoop",
+    "tipo": "banco",
+    "colorPrimario": "#1976D2",
+    "colorTexto": "#FFFFFF",
+    "siglas": "CRE",
+    "adheridoAModo": true
+  },
+  {
+    "id": "brubank",
+    "nombre": "Brubank",
+    "tipo": "banco",
+    "colorPrimario": "#5E35B1",
+    "colorTexto": "#FFFFFF",
+    "siglas": "BRU"
+  },
+  {
+    "id": "uala",
+    "nombre": "Ualá",
+    "tipo": "billetera",
+    "colorPrimario": "#FF4081",
+    "colorTexto": "#FFFFFF",
+    "siglas": "ULA"
+  },
+  {
+    "id": "supervielle",
+    "nombre": "Banco Supervielle",
+    "tipo": "banco",
+    "colorPrimario": "#E30613",
+    "colorTexto": "#FFFFFF",
+    "siglas": "SUP",
+    "adheridoAModo": true
+  },
+  {
+    "id": "icbc",
+    "nombre": "Banco ICBC",
+    "tipo": "banco",
+    "colorPrimario": "#C41230",
+    "colorTexto": "#FFFFFF",
+    "siglas": "ICBC",
+    "adheridoAModo": true
+  },
+  {
+    "id": "banco-comafi",
+    "nombre": "Banco Comafi",
+    "tipo": "banco",
+    "colorPrimario": "#0077C8",
+    "colorTexto": "#FFFFFF",
+    "siglas": "COM",
+    "adheridoAModo": true
+  },
+  {
+    "id": "banco-hipotecario",
+    "nombre": "Banco Hipotecario",
+    "tipo": "banco",
+    "colorPrimario": "#003865",
+    "colorTexto": "#FFFFFF",
+    "siglas": "BH",
+    "adheridoAModo": true
+  },
+  {
+    "id": "banco-corrientes",
+    "nombre": "Banco de Corrientes",
+    "tipo": "banco",
+    "colorPrimario": "#008752",
+    "colorTexto": "#FFFFFF",
+    "siglas": "COR",
+    "adheridoAModo": true
+  },
+  {
+    "id": "banco-patagonia",
+    "nombre": "Banco Patagonia",
+    "tipo": "banco",
+    "colorPrimario": "#00713C",
+    "colorTexto": "#FFFFFF",
+    "siglas": "PAT"
+  },
+  {
+    "id": "yoy",
+    "nombre": "YOY",
+    "tipo": "billetera",
+    "colorPrimario": "#5B2A86",
+    "colorTexto": "#FFFFFF",
+    "siglas": "YOY",
+    "nota": "Cuenta digital de ICBC. Sus promos de MODO se cobran pagando con MODO.",
+    "adheridoAModo": true
+  }
+]
