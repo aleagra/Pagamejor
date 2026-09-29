@@ -1,0 +1,11 @@
+{
+  "name": "pagamejor-agents",
+  "version": "1.0.0",
+  "description": "Agentes especializados para el desarrollo, datos y gobernanza del proyecto PagaMejor (pagamejor.ar)",
+  "agents": [
+    "data-agent",
+    "frontend-agent",
+    "logic-agent",
+    "monitor-agent"
+  ]
+}
