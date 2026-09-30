@@ -4,8 +4,8 @@
   "description": "¿Con qué tarjeta te conviene pagar hoy en Argentina para maximizar descuentos bancarios?",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FBF9F5",
-  "theme_color": "#1E6B48",
+  "background_color": "#F7F7F5",
+  "theme_color": "#F7F7F5",
   "lang": "es",
   "icons": [
     {
