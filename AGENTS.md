@@ -8,11 +8,11 @@ Este proyecto opera bajo un modelo de **Agentes Especializados** coordinados por
 
 1. **Filtro Estricto de Billetera (No Negociable)**:
    - **NUNCA** se debe mostrar una promoción de un banco, tarjeta o billetera que el usuario no haya seleccionado explícitamente en "Mi Billetera".
-   - Excepción explícita (MODO): MODO no es una tarjeta sino una app que se vincula a una tarjeta de un banco adherido. Las promos *generales* de MODO ("cualquier banco adherido") se muestran a quien tenga MODO **o** cualquier banco con `adheridoAModo: true` en `bancos.json`. Las promos exclusivas de un banco vía MODO (ej. Hipotecario, YOY) se muestran solo bajo ese banco, con el aviso de que se pagan con MODO.
+   - MODO sigue la misma regla: sus promos *generales* ("cualquier banco adherido") se muestran **solo si la persona eligió MODO** en "Mi Billetera". Tener un banco adherido (`adheridoAModo: true`) no lo activa solo. Las promos exclusivas de un banco vía MODO (ej. Hipotecario, YOY) se muestran bajo ese banco, marcadas "QR MODO" en su medio de pago.
    - Está terminantemente prohibido sugerir "la mejor opción del mercado" si el usuario no posee ese medio de pago. Si para el rubro y día seleccionado el usuario no tiene ninguna promoción aplicable con sus medios de pago, la aplicación debe indicarlo con total claridad y amabilidad (ej. *"Hoy no tenés promociones activas en este rubro con tus medios de pago actuales"*).
 
 2. **Diseño Visual para Adultos Mayores**:
-   - Estética serena, cálida y de baja estimulación (sin estridencias, sin animaciones llamativas ni micro-interacciones confusas).
+   - Estética serena y cálida. El movimiento tiene presencia pero es medido, porque es una app de uso diario: transiciones cortas (menos de 1s) con un rebote leve, que nunca bloquean el uso ni se repiten en bucle, y que respetan "reducir movimiento" del sistema (ver `.agents/prompts/rediseno-minimalista.md`).
    - Tipografía grande y de altísima legibilidad (mínimo 16px para texto secundario, 18-20px para cuerpo y 24px+ para titulares).
    - Elementos interactivos amplios (botones y tarjetas con target táctil mínimo de 48px a 56px).
    - Alto contraste accesible pero sin fondos negros puros; usar tonos cálidos y descansados (arena, crema, terracota suave, verdes salvia, azul petróleo profundo).

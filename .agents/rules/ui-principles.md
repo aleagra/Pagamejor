@@ -34,9 +34,11 @@ Toda propuesta visual o componente desarrollado por `frontend-agent` debe cumpli
 
 ---
 
-### 4. Cero Animaciones Invasivas o Distractoras
-- Prohibidas las animaciones parpadeantes, giros bruscos, carruseles automáticos que se muevan solos o modales invasivos no solicitados.
-- Solo transiciones sutiles de opacidad o color al tocar un botón (`transition: all 0.2s ease`).
+### 4. Movimiento con Presencia, pero Medido (uso diario)
+- Las animaciones se notan y dan vida (entradas en cascada, contador del porcentaje, selectores que se deslizan, sheets con resorte), pero son cortas (menos de 1s), se ven una vez por acción y nunca obligan a esperar para tocar.
+- Usar Motion (`motion/react`) con springs de rebote leve (`bounce` 0.15–0.25) y Lenis solo para rueda/trackpad. El detalle completo está en `.agents/prompts/rediseno-minimalista.md`.
+- **Modo liviano obligatorio**: toda animación nueva tiene que apagarse con el modo liviano (`useModoLiviano()` en `MotionProvider`). En ese modo no se usan `layoutId`, Lenis ni `backdrop-filter`, y las sombras salen de las variables `--shadow-*` (que ese modo reemplaza por bordes). Se activa solo en equipos lentos, sin aceleración gráfica, con ahorro de datos o con "reducir movimiento" del sistema.
+- Prohibidas las animaciones en bucle o parpadeantes, el parallax, los giros bruscos, los carruseles automáticos que se muevan solos y los modales invasivos no solicitados.
 
 ---
 

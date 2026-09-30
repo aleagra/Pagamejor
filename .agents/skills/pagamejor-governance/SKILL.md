@@ -10,7 +10,7 @@ Esta skill contiene las directrices para operar el sistema multi-agente en el pr
 ## 1. Principios de Oro de Producto
 1. **Filtro Estricto de Billetera**: Jamás recomendar una promoción de un medio de pago que el usuario no seleccionó.
 2. **Cero IA en Runtime**: Toda recomendación se basa en un algoritmo determinístico local en el cliente.
-3. **Diseño para Adultos Mayores**: Tipografía grande (18px+ en cuerpo), colores cálidos descansados, zonas táctiles amplias (48px+), cero animaciones bruscas.
+3. **Diseño para Adultos Mayores**: Tipografía grande (18px+ en cuerpo), colores cálidos descansados, zonas táctiles amplias (48px+), movimiento con presencia pero medido (corto, sin bucles, respeta "reducir movimiento").
 4. **Respeto a los Dominios**: Cada agente solo modifica los archivos bajo su responsabilidad.
 
 ## 2. Flujo de Trabajo para Nuevas Funcionalidades
