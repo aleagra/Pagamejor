@@ -1,45 +1,33 @@
 "use client";
 
 import React from "react";
-import { Wallet } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { EASE_OUT, entradaInicial } from "@/components/MotionProvider";
 
 interface HeaderProps {
-  walletCount: number;
-  onOpenWallet: () => void;
+  /** Línea chica sobre el título (ej. "Hoy, martes 29 de septiembre"). */
+  eyebrow: string;
+  /** Titular (ej. "¿Con qué pago hoy?"). */
+  title: string;
+  className?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ walletCount, onOpenWallet }) => {
+/** Título de la página; al cambiar de día sale hacia arriba y el nuevo entra desenfocado. */
+export const Header: React.FC<HeaderProps> = ({ eyebrow, title, className = "" }) => {
   return (
-    <header className="flex flex-col gap-4 pb-6 border-b border-border-subtle mb-6">
-      <div className="flex justify-between items-center gap-3">
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-extrabold text-forest tracking-tight">
-            PagaMejor
-          </span>
-          <span className="text-sm font-semibold text-text-muted bg-surface-elevated px-2 py-0.5 rounded">
-            pagamejor.ar
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={onOpenWallet}
-          className="inline-flex items-center gap-2 min-h-[48px] px-4 py-2 bg-surface border-2 border-border-strong rounded-full text-base font-bold text-text-main shadow-sm hover:bg-surface-elevated transition-colors"
-          aria-label={`Ver y editar Mi Billetera. Tenés ${walletCount} bancos seleccionados.`}
+    <motion.header {...entradaInicial(1)} className={className}>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={title}
+          initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          exit={{ opacity: 0, y: -8, filter: "blur(4px)", transition: { duration: 0.14 } }}
+          transition={{ duration: 0.4, ease: EASE_OUT }}
         >
-          <Wallet size={20} strokeWidth={2.2} />
-          <span>Mi Billetera</span>
-          {walletCount > 0 && (
-            <span className="bg-forest text-white rounded-full px-2 py-0.5 text-sm font-bold">
-              {walletCount}
-            </span>
-          )}
-        </button>
-      </div>
-
-      <p className="text-lg text-text-secondary leading-snug">
-        Elegí el rubro de tu compra para ver con qué tarjeta o billetera te conviene pagar hoy.
-      </p>
-    </header>
+          <p className="text-[17px] sm:text-lg font-medium text-ink-3 mb-1">{eyebrow}</p>
+          <h1 className="display text-[32px] sm:text-[40px] font-bold leading-[1.1] text-ink">{title}</h1>
+        </motion.div>
+      </AnimatePresence>
+    </motion.header>
   );
 };
