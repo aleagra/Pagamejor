@@ -1,45 +1,114 @@
 @import "tailwindcss";
 
+/* Variante para el modo liviano (atributo data-liviano en <html>, ver MotionProvider) */
+@custom-variant liviano (&:where([data-liviano], [data-liviano] *));
+
 @theme {
-  --color-brand-bg: #FBF9F5;
+  /* Superficies al estilo MODO: página casi blanca, paneles gris claro y tarjetas blancas con borde finísimo */
+  --color-canvas: #F9F9F7;
   --color-surface: #FFFFFF;
-  --color-surface-elevated: #F6F2EA;
-  --color-surface-active: #EFE9DE;
+  --color-panel: #F0F0ED;
+  --color-fill: #EDEDEA;
+  --color-fill-strong: #E2E2DE;
+  --color-hairline: #EBEBE7;
 
-  --color-text-main: #1A202C;
-  --color-text-secondary: #3D4852;
-  --color-text-muted: #64748B;
+  /* Tinta: casi negra para títulos, números y acciones principales */
+  --color-ink: #131517;
+  --color-ink-2: #464B52;
+  --color-ink-3: #6A6F76;
 
-  --color-forest: #1E6B48;
-  --color-forest-bg: #EAF4EE;
-  --color-forest-border: #9ED4B5;
+  /* Acento verde solo en detalles (íconos, marcas, "mejor opción"); terracota solo para advertencias */
+  --color-accent: #0F7A58;
+  --color-accent-strong: #0B6247;
+  --color-accent-soft: #E3F4EC;
+  --color-warn: #A8461F;
+  --color-warn-soft: #FBEFE8;
 
-  --color-terracotta: #B44D25;
-  --color-terracotta-bg: #FDF1EA;
-  --color-terracotta-border: #F0C4B0;
+  --font-sans: var(--font-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  --color-border-subtle: #E5DFD5;
-  --color-border-strong: #CDC4B5;
+  /* La primera capa es un borde de 1px: todas las tarjetas quedan definidas sin sumar bordes a mano */
+  --shadow-card: 0 0 0 1px rgb(19 21 23 / 0.06), 0 1px 2px rgb(19 21 23 / 0.04), 0 8px 24px rgb(19 21 23 / 0.04);
+  --shadow-float: 0 0 0 1px rgb(19 21 23 / 0.06), 0 24px 64px rgb(19 21 23 / 0.16);
+  --shadow-segment: 0 0 0 1px rgb(19 21 23 / 0.05), 0 1px 3px rgb(19 21 23 / 0.08);
 }
 
 html {
+  /* Una sola barra de scroll (la de la página) y sin saltos al abrir un modal, que bloquea el scroll */
+  scrollbar-gutter: stable;
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
+  background-color: var(--color-canvas);
 }
 
 body {
-  background-color: var(--color-brand-bg);
-  color: var(--color-text-main);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
   min-height: 100vh;
-  line-height: 1.6;
+  line-height: 1.5;
+  /* Plus Jakarta tiene un espacio entre palabras angosto: se abre un poco para leer mejor */
+  word-spacing: 0.08em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button, a {
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-button:focus-visible, a:focus-visible {
-  outline: 3px solid var(--color-forest);
+button:focus-visible, a:focus-visible, input:focus-visible {
+  outline: 3px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+/* Titulares al estilo Apple: tracking negativo, peso firme */
+.display {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+}
+
+/*
+ * Vidrio (liquid glass) para la barra: fondo translúcido con desenfoque y saturación, un reflejo de luz
+ * arriba y una línea fina abajo que se marca al bajar. En modo liviano queda sólido (ver más abajo).
+ */
+.vidrio {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.72), rgb(255 255 255 / 0.55));
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), 0 1px 0 rgb(19 21 23 / 0.04);
+}
+.vidrio-activo {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), 0 1px 0 rgb(19 21 23 / 0.08), 0 8px 24px rgb(19 21 23 / 0.06);
+}
+html[data-liviano] .vidrio {
+  background: var(--color-surface);
+}
+
+/* Scrollbar discreta dentro de los modales (su lista scrollea; título, buscador y acción quedan fijos) */
+.scroll-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-fill-strong) transparent;
+}
+
+/*
+ * Modo liviano: equipos lentos, sin aceleración gráfica o por elección.
+ * Sin transiciones, sin desenfoques (backdrop-filter) y sombras difusas cambiadas por un borde fino:
+ * son lo más caro de redibujar al hacer scroll cuando no hay GPU.
+ */
+html[data-liviano] {
+  --shadow-card: 0 0 0 1px var(--color-hairline);
+  --shadow-segment: 0 0 0 1px var(--color-fill-strong);
+  --shadow-float: 0 0 0 1px var(--color-hairline);
+}
+
+html[data-liviano] *,
+html[data-liviano] *::before,
+html[data-liviano] *::after {
+  transition-duration: 0s !important;
+  animation-duration: 0s !important;
+  animation-iteration-count: 1 !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }

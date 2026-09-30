@@ -1,5 +1,14 @@
 import type { Metadata, Viewport } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "@/styles/globals.css";
+import { MotionProvider } from "@/components/MotionProvider";
+
+// Sans geométrica y muy legible (recomendada en las reglas de UI), igual en todos los dispositivos
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "PagaMejor | ¿Con qué tarjeta conviene pagar hoy?",
@@ -12,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FBF9F5",
+  themeColor: "#F7F7F5",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -24,11 +33,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" className={jakarta.variable}>
       <body>
-        <div className="w-full max-w-4xl lg:max-w-6xl xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 min-h-screen flex flex-col justify-between">
-          {children}
-        </div>
+        <MotionProvider>
+          <div className="min-h-screen flex flex-col">{children}</div>
+        </MotionProvider>
       </body>
     </html>
   );
