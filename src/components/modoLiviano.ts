@@ -44,9 +44,14 @@ function escribir(key: string, value: string | null): void {
   }
 }
 
+/**
+ * Ya no hay control manual en la página: solo se respeta "desactivadas". Un "activadas" guardado por el control viejo
+ * se borra, porque anulaba la detección automática sin forma de volver atrás.
+ */
 export function leerPreferencia(): PreferenciaAnimaciones {
   const v = leer(PREF_KEY);
-  return v === "activadas" || v === "desactivadas" ? v : "auto";
+  if (v === "activadas") escribir(PREF_KEY, null);
+  return v === "desactivadas" ? v : "auto";
 }
 
 export function guardarPreferencia(p: PreferenciaAnimaciones): void {
@@ -62,16 +67,22 @@ function lentoPorFpsReciente(): boolean {
   return Number.isFinite(fecha) && fecha > 0 && Date.now() - fecha < FPS_VIGENCIA_MS;
 }
 
-/** true si el navegador dibuja por software o no tiene WebGL (aceleración gráfica desactivada). */
+/**
+ * true si el navegador dibuja por software o no tiene WebGL (aceleración gráfica desactivada).
+ * `failIfMajorPerformanceCaveat` hace que el navegador rechace el contexto cuando solo podría dibujar por software:
+ * es la señal más confiable (Chrome con "Usar aceleración gráfica" apagado). El nombre del renderizador es el respaldo.
+ */
 function renderizaPorSoftware(): boolean {
   try {
     const canvas = document.createElement("canvas");
-    const gl = (canvas.getContext("webgl") ?? canvas.getContext("experimental-webgl")) as WebGLRenderingContext | null;
-    if (!gl) return true;
-    const info = gl.getExtension("WEBGL_debug_renderer_info");
-    const renderer = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
-    gl.getExtension("WEBGL_lose_context")?.loseContext();
-    return /swiftshader|llvmpipe|softpipe|software|basic render/i.test(renderer);
+    const conAceleracion = canvas.getContext("webgl", { failIfMajorPerformanceCaveat: true }) as WebGLRenderingContext | null;
+    if (!conAceleracion) return true;
+    const info = conAceleracion.getExtension("WEBGL_debug_renderer_info");
+    const renderer = [conAceleracion.getParameter(conAceleracion.RENDERER), info && conAceleracion.getParameter(info.UNMASKED_RENDERER_WEBGL)]
+      .filter(Boolean)
+      .join(" ");
+    conAceleracion.getExtension("WEBGL_lose_context")?.loseContext();
+    return /swiftshader|llvmpipe|softpipe|software|basic render|microsoft basic/i.test(renderer);
   } catch {
     return false;
   }
@@ -87,6 +98,33 @@ export function detectarMotivoLiviano(): MotivoLiviano | null {
   if (lentoPorFpsReciente()) return "fps";
   return null;
 }
+
+/**
+ * Mide los cuadros mientras la persona usa la página (al tocar algo se abren acordeones y hojas): devuelve el
+ * percentil 90 del tiempo entre cuadros, en ms. Por encima de ~40ms (menos de 25 fps en los peores cuadros) la
+ * animación se ve trabada aunque la página quieta vaya a 60.
+ */
+export function medirCuadrosEnUso(duracionMs = 700): Promise<number | null> {
+  return new Promise((resolve) => {
+    if (document.visibilityState !== "visible") return resolve(null);
+    const tiempos: number[] = [];
+    let anterior = 0;
+    let inicio = 0;
+    const cuadro = (t: number) => {
+      if (!inicio) inicio = t;
+      if (anterior) tiempos.push(t - anterior);
+      anterior = t;
+      if (t - inicio < duracionMs) return void requestAnimationFrame(cuadro);
+      if (tiempos.length < 5) return resolve(null);
+      tiempos.sort((a, b) => a - b);
+      resolve(tiempos[Math.floor(tiempos.length * 0.9)]);
+    };
+    requestAnimationFrame(cuadro);
+  });
+}
+
+/** Percentil 90 de cuadro (ms) a partir del cual una interacción cuenta como trabada. */
+export const CUADRO_TRABADO_MS = 40;
 
 /**
  * Mide los cuadros por segundo reales (mediana) durante `duracionMs`.

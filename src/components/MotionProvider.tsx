@@ -12,6 +12,8 @@ import {
   guardarLentoPorFps,
   guardarPreferencia,
   leerPreferencia,
+  medirCuadrosEnUso,
+  CUADRO_TRABADO_MS,
   medirFps,
 } from "@/components/modoLiviano";
 
@@ -128,6 +130,29 @@ export const MotionProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // Se mide una sola vez por carga
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Vigía en uso: al tocar algo (abrir un acordeón, una hoja) se miden los cuadros. Si 2 de las últimas 3
+  // interacciones se trabaron, el equipo no aguanta las animaciones aunque la página quieta vaya a 60 fps
+  useEffect(() => {
+    if (liviano) return;
+    let midiendo = false;
+    const ultimas: boolean[] = [];
+    const alTocar = async () => {
+      if (midiendo) return;
+      midiendo = true;
+      const p90 = await medirCuadrosEnUso();
+      midiendo = false;
+      if (p90 === null) return;
+      ultimas.push(p90 > CUADRO_TRABADO_MS);
+      if (ultimas.length > 3) ultimas.shift();
+      if (ultimas.filter(Boolean).length >= 2) {
+        guardarLentoPorFps();
+        setMotivo("fps");
+      }
+    };
+    window.addEventListener("pointerup", alTocar, { passive: true });
+    return () => window.removeEventListener("pointerup", alTocar);
+  }, [liviano]);
 
   // Scroll con inercia de la página (el único scroll de la app, salvo el interior de los modales),
   // solo si el equipo lo aguanta

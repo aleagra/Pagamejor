@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { BancoBilletera, Promocion } from "@/data/schema";
 import { GroupedBankPromo, PromoNivelDescuento, PromoVariante } from "@/logic/types";
 import { BankBadge } from "@/components/BankBadge";
@@ -73,6 +73,9 @@ function OpcionRow({
   aparicion?: number;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  // Se monta al abrir por primera vez (no se arma el detalle de todas las opciones de entrada)
+  const [montado, setMontado] = useState(defaultOpen);
+  if (open && !montado) setMontado(true);
   const panelId = `opcion-${v.id}`;
   const metodo = metodoPago(v.medioPagoDetalle, v.condicionUso, promo?.tipoMedioRequerido);
   const resumen = [formatTope(v.tipoTope, v.montoTope), v.minimoCompra ? `Mínimo ${formatMoneda(v.minimoCompra)}` : ""]
@@ -105,31 +108,32 @@ function OpcionRow({
             <span className="block text-base leading-snug text-warn">Solo en algunos lugares puntuales</span>
           )}
         </span>
-        <motion.span
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={{ type: "spring", bounce: 0.35, duration: 0.45 }}
-          className="shrink-0 w-9 h-9 rounded-full bg-panel flex items-center justify-center text-ink-2"
+        <span
+          className={`shrink-0 w-9 h-9 rounded-full bg-panel flex items-center justify-center text-ink-2 transition-transform duration-200 ${
+            open ? "rotate-180" : ""
+          }`}
           aria-hidden="true"
         >
           <CaretDown size={18} weight="bold" />
-        </motion.span>
+        </span>
       </button>
 
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            id={panelId}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <motion.div
+      {/*
+       * Acordeón con CSS (grid-template-rows 0fr -> 1fr): lo resuelve el navegador sin JavaScript por cuadro, así va
+       * fluido en celulares de gama media. El contenido se monta al abrir por primera vez y queda montado.
+       */}
+      <div
+        id={panelId}
+        className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
+          open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+        inert={!open}
+      >
+        <div className="min-h-0 overflow-hidden">
+          {montado && (
+            <div
               // El detalle va en un recuadro propio, con aire: se distingue de la fila y de la opción siguiente
               className="mb-4 sm:ml-[60px] rounded-2xl bg-canvas shadow-[inset_0_0_0_1px_var(--color-hairline)] p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-6"
-              initial={{ y: -8 }}
-              animate={{ y: 0 }}
-              exit={{ y: -8 }}
             >
               {/* Cómo pagar y lo que hay que tener en cuenta ocupan el ancho; los datos cortos van de a dos */}
               <div className="sm:col-span-2">
@@ -186,10 +190,10 @@ function OpcionRow({
                   <ArrowSquareOut size={17} weight="bold" aria-hidden="true" />
                 </a>
               )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+          )}
+        </div>
+      </div>
     </motion.li>
   );
 }

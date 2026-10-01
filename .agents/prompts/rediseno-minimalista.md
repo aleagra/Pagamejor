@@ -49,8 +49,9 @@ Movimiento **con presencia pero medido**: esto se abre todos los días para paga
 - **Micro-interacciones:** al tocar, los botones escalan a 0.95–0.98; al pasar el mouse, los pills suben 2px y las flechas avanzan 4px. Las marcas de Mi billetera aparecen con un "pop" y los acordeones abren con resorte.
 - **Detalle:** la ventana sube con resorte (hoja en el celular, centrada en escritorio). Las filas que agrega "Mostrar más" entran en cascada.
 - **Modo liviano** (`src/components/modoLiviano.ts`): sin animaciones (`MotionConfig skipAnimations`), sin Lenis, sin `layoutId`, sin desenfoques y con las sombras difusas cambiadas por bordes finos. La página se ve igual, pero no se mueve.
-  - **Se activa solo** si el sistema pide reducir movimiento, si hay ahorro de datos, con 2 núcleos o 2GB de RAM o menos, si el navegador dibuja por software (aceleración gráfica desactivada o sin WebGL), o si al cargar se miden menos de 45fps. Esta última medición se recuerda por 30 días.
-  - **Sin control manual:** se decide solo. Si alguien ya había elegido "Siempre" o "Nunca" con el control viejo, se respeta (`pagamejor_animaciones`).
+  - **Se activa solo** si el sistema pide reducir movimiento, si hay ahorro de datos, con 2 núcleos o 2GB de RAM o menos, si el navegador dibuja por software (WebGL con `failIfMajorPerformanceCaveat` rechazado, o renderizador SwiftShader/llvmpipe), si al cargar se miden menos de 45fps, o si **2 de las últimas 3 interacciones se trabaron** (percentil 90 de cuadro > 40ms medido justo después de tocar algo: es lo que detecta un Android que va a 60 quieto pero se traba al abrir un acordeón). La medición lenta se recuerda 30 días.
+  - **Sin control manual:** se decide solo. Solo se respeta un "desactivadas" guardado; un "activadas" del control viejo se borra porque anulaba la detección.
+  - **Animaciones baratas en celular:** los acordeones van con CSS (`grid-template-rows` 0fr→1fr, 200ms), sin medir alturas con JavaScript; el fondo de las hojas no se desenfoca en celular.
 - **Prohibido:** parallax, animaciones en bucle, carruseles automáticos, parpadeos, rebotes exagerados y cualquier animación que haga esperar para poder tocar.
 
 ## Secciones

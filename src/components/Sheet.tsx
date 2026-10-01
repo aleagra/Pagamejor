@@ -103,7 +103,7 @@ export const Sheet: React.FC<SheetProps> = ({
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6" data-lenis-prevent>
           <motion.div
-            className="absolute inset-0 bg-[rgb(29_31_35/0.34)] backdrop-blur-[3px] liviano:bg-[rgb(29_31_35/0.42)]"
+            className="absolute inset-0 bg-[rgb(29_31_35/0.42)] sm:bg-[rgb(29_31_35/0.34)] sm:backdrop-blur-[3px] liviano:bg-[rgb(29_31_35/0.42)]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, transition: { duration: 0.25 } }}
             exit={{ opacity: 0, transition: { duration: 0.2 } }}
