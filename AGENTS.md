@@ -9,6 +9,7 @@ Este proyecto opera bajo un modelo de **Agentes Especializados** coordinados por
 1. **Filtro Estricto de Billetera (No Negociable)**:
    - **NUNCA** se debe mostrar una promoción de un banco, tarjeta o billetera que el usuario no haya seleccionado explícitamente en "Mi Billetera".
    - MODO sigue la misma regla: sus promos *generales* ("cualquier banco adherido") se muestran **solo si la persona eligió MODO** en "Mi Billetera". Tener un banco adherido (`adheridoAModo: true`) no lo activa solo. Las promos exclusivas de un banco vía MODO (ej. Hipotecario, YOY) se muestran bajo ese banco, marcadas "QR MODO" en su medio de pago.
+   - **Forma de pago:** tampoco se recomienda una promo que la persona no puede pagar. En "Mi Billetera" se pregunta "¿Cómo podés pagar?" (QR o app, tarjeta de plástico, celular Android con NFC). Hasta que responda se asumen app y tarjeta: si hoy hay algo mejor con NFC, la pantalla pregunta "¿Tu celular es Android con NFC?" en vez de mostrar ese porcentaje. La clasificación sale de `src/logic/formasPago.ts` y el filtro lo aplica `findBestPromos`.
    - Está terminantemente prohibido sugerir "la mejor opción del mercado" si el usuario no posee ese medio de pago. Si para el rubro y día seleccionado el usuario no tiene ninguna promoción aplicable con sus medios de pago, la aplicación debe indicarlo con total claridad y amabilidad (ej. *"Hoy no tenés promociones activas en este rubro con tus medios de pago actuales"*).
 
 2. **Diseño Visual para Adultos Mayores**:
@@ -23,7 +24,7 @@ Este proyecto opera bajo un modelo de **Agentes Especializados** coordinados por
      - Medios de pago activos en `localStorage`
      - Día de la semana actual (`Date.getDay()`)
      - Rubro seleccionado
-     - Mayor porcentaje de reintegro y tope disponible.
+     - Mayor porcentaje de reintegro y tope disponible (los topes se comparan llevados a un mes; las promos con `alcanceLimitado` —ferias puntuales, universidades— van después de las que sirven en cualquier lado; los empates se desempatan siempre igual: ver `src/logic/orden.ts`).
 
 4. **Privacidad y Cero Fricción (V1)**:
    - No requiere registro ni login. Las preferencias se guardan en el `localStorage` del dispositivo del usuario.
@@ -65,7 +66,12 @@ Cada fuente tiene su método; la fuente de verdad es `scripts/monitors/sources.j
 5. **`galicia.js`**: API BFF JSON con filtro `Localidad=MAR DEL PLATA` (endpoint identificado con DevTools > Network).
 6. **`patagonia.js`**: estático por categoría; guarda los 3 niveles Clásica/Plus/Singular en `niveles`. Excluye Río Negro/otras provincias.
 7. **`supervielle.js`**: sub-páginas estáticas por rubro (`__NEXT_DATA__`) y `/identite`; guarda Clásico/Identité en `niveles`.
-8. **`mercadopago.js`**: sub-fuente PÚBLICA; la vigencia sale siempre del "Legales" de cada card. La sub-fuente logueada (app) es 100% manual.
+8. **`mercadopago.js`**: Mercado Pago no publica sus beneficios en locales en ninguna web pública (solo en la app, según ubicación). El script lee las promos de MP que publican Carrefour y ChangoMás en sus páginas de descuentos bancarios (Playwright). La sub-fuente logueada (app) es 100% manual: capturas tomadas **desde Mar del Plata**.
+9. **`bna.js`**: API JSON pública de semananacion.com.ar (promos + comercios adheridos con domicilio para verificar MdP). Tope siempre del texto legal.
+10. **`brubank.js`**: listado estático + bases en help.brubank.com (plan, días, tope, vigencia y anexo de locales). Plan Plus/Ultra → `activo:false`.
+11. **`corrientes.js`**: HTML público de promosdelbanco.com; solo páginas cuya tabla de comercios incluye Mar del Plata.
+- **BBVA** bloquea el acceso automático (403): no se saltea esa protección; sus promos llegan por MODO y por captura.
+- **MODO** recorre todas las secciones que publica la web y cada una filtrada por banco (sin el filtro por banco se pierden promos).
 - **`monthly-check.js`**: checklist con la última verificación de cada fuente, recordatorios de las fuentes manuales y corrida mensual (`npm run monitor:monthly`, `monitor:all`, `monitor:status`).
 - Utilidades: `utils/common.js` (parseo de fechas/días/topes) y `utils/diff-reporter.js` (reporte de diferencias).
 

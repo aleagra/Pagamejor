@@ -17,7 +17,7 @@ Toda propuesta visual o componente desarrollado por `frontend-agent` debe cumpli
 ---
 
 ### 2. Tipografía Grande y Altamente Legible
-- **Fuente**: Tipografía sans-serif moderna con excelente legibilidad y apertura (ej. *Inter*, *Plus Jakarta Sans* o *Outfit*).
+- **Fuente**: Tipografía sans-serif moderna con excelente legibilidad y apertura (ej. *Inter*, *Plus Jakarta Sans* o *Outfit*). La app usa *Instrument Sans*.
 - **Escala de tamaños**:
   - Texto secundario / leyendas: mínimo `1rem` (16px).
   - Cuerpo de texto principal: `1.125rem` a `1.25rem` (18px a 20px).
