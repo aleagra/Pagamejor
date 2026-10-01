@@ -1,5 +1,9 @@
 import { Promocion, TipoTope } from "@/data/schema";
 import { GroupedBankPromo, PromoVariante } from "@/logic/types";
+import { formasDePago, type FormaDePago } from "@/logic/formasPago";
+import { compararBeneficio, topeMensual } from "@/logic/orden";
+
+export type { FormaDePago };
 
 const fmtDiaSemana = new Intl.DateTimeFormat("es-AR", { weekday: "long" });
 const fmtMes = new Intl.DateTimeFormat("es-AR", { month: "long" });
@@ -101,8 +105,6 @@ export function modoEnGrupo(group: GroupedBankPromo): "todas" | "algunas" | "nin
   return n === group.variantes.length ? "todas" : "algunas";
 }
 
-export type FormaDePago = "NFC" | "QR MODO" | "QR" | "Clave DNI" | "Transferencia" | "Online" | "Tarjeta";
-
 export interface MetodoPago {
   /** Cómo se paga en la caja, en orden: ej. ["QR", "Clave DNI"]. */
   formas: FormaDePago[];
@@ -123,20 +125,8 @@ export function metodoPago(
   tipo?: "debito" | "credito" | "cuenta" | "cualquiera"
 ): MetodoPago {
   const m = (medioPagoDetalle || "").toLowerCase();
-  const todo = `${m} ${condicionUso.toLowerCase()}`;
-  const formas: FormaDePago[] = [];
-
-  if (/tarjeta.*\bo qr\b/.test(m)) formas.push("Tarjeta");
-  if (/dinero en cuenta o nfc/.test(m)) formas.push("QR");
-  if (/nfc|contactless|sin contacto/.test(m)) formas.push("NFC");
-  if (/\bmodo\b/.test(m)) formas.push("QR MODO");
-  else if (/\bqr\b/.test(m) && !formas.includes("QR")) formas.push("QR");
-  if (/clave dni/.test(m)) formas.push("Clave DNI");
-  if (/transferencia/.test(m)) formas.push("Transferencia");
-  if (formas.length === 0 && /online|mercado libre|cabify|\bweb\b|checkout/.test(m)) formas.push("Online");
-  if (formas.length === 0 && /nfc|contactless/.test(todo)) formas.push("NFC");
-  if (formas.length === 0 && /\bqr\b/.test(todo)) formas.push("QR");
-  if (formas.length === 0) formas.push("Tarjeta");
+  // Las formas las clasifica la lógica: es la misma regla que usa el motor para "¿Cómo podés pagar?"
+  const formas = formasDePago(medioPagoDetalle, condicionUso);
 
   const credito = /cr[eé]dito/.test(m);
   const debito = /d[eé]bito/.test(m);
@@ -152,4 +142,39 @@ export function metodoPago(
 
   const forma = formas.join(" o ");
   return { formas, fondos, texto: fondos ? `${forma} · ${fondos}` : forma };
+}
+
+/** Cómo se compara un banco con el primero de la lista que da su mismo porcentaje. */
+export interface ComparacionMismoPorcentaje {
+  /** "igual": mismo %, tope y mínimo (un empate). "menor-tope": mismo % con menos tope al mes. "mayor-minimo": pide más compra mínima. */
+  tipo: "igual" | "menor-tope" | "mayor-minimo";
+}
+
+/**
+ * Explica por qué un banco quedó detrás de otro con el mismo porcentaje ("Mismo 30% y mismo tope",
+ * "Mismo 15%, menor tope"). `ordenados` es la lista del motor: la mejor opción y después las demás.
+ * Solo compara: el orden lo decide el motor (ver src/logic/orden.ts).
+ */
+export function comparacionMismoPorcentaje(
+  g: GroupedBankPromo,
+  ordenados: GroupedBankPromo[],
+): ComparacionMismoPorcentaje | null {
+  const lider = ordenados.find((o) => o.maxPorcentaje === g.maxPorcentaje);
+  if (!lider || lider.bancoBilleteraId === g.bancoBilleteraId) return null;
+  const a = g.bestPromo;
+  const b = lider.bestPromo;
+  if (compararBeneficio(a, b) === 0) return { tipo: "igual" };
+  if (topeMensual(a) < topeMensual(b)) return { tipo: "menor-tope" };
+  if ((a.minimoCompra ?? 0) > (b.minimoCompra ?? 0)) return { tipo: "mayor-minimo" };
+  return null;
+}
+
+/** "hasta X%" solo si hay más de un porcentaje entre las promos que cuentan para el número del banco. */
+export function hayVariosPorcentajes(g: GroupedBankPromo): boolean {
+  return g.niveles.filter((n) => n.porcentaje <= g.maxPorcentaje).length > 1;
+}
+
+/** El porcentaje más alto del desglose completo (incluye promos de alcance limitado), para el detalle. */
+export function maxPorcentajeDetalle(g: GroupedBankPromo): number {
+  return Math.max(...g.niveles.map((n) => n.porcentaje));
 }

@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Instrument_Sans } from "next/font/google";
 import "@/styles/globals.css";
 import { MotionProvider } from "@/components/MotionProvider";
 
-// Sans geométrica y muy legible (recomendada en las reglas de UI), igual en todos los dispositivos
-const jakarta = Plus_Jakarta_Sans({
+// Sans cálida y compacta, muy legible en tamaños grandes; igual en todos los dispositivos
+const instrument = Instrument_Sans({
   subsets: ["latin"],
-  variable: "--font-jakarta",
+  variable: "--font-instrument",
   display: "swap",
 });
 
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F7F7F5",
+  themeColor: "#EEEDE8",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -33,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={jakarta.variable}>
+    <html lang="es" className={instrument.variable}>
       <body>
         <MotionProvider>
           <div className="min-h-screen flex flex-col">{children}</div>

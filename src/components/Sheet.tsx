@@ -21,6 +21,8 @@ interface SheetProps {
    * elige tocando una fila (rubros, otro día). El título y la barra de herramientas quedan fijos arriba.
    */
   cerrarAbajo?: boolean;
+  /** "amplio": ventana más ancha en escritorio, para el desglose de un banco. */
+  ancho?: "normal" | "amplio";
   children: React.ReactNode;
 }
 
@@ -41,6 +43,7 @@ export const Sheet: React.FC<SheetProps> = ({
   dismissible = true,
   toolbar,
   cerrarAbajo = false,
+  ancho = "normal",
   children,
 }) => {
   const [mounted, setMounted] = useState(false);
@@ -114,7 +117,7 @@ export const Sheet: React.FC<SheetProps> = ({
             aria-modal="true"
             aria-labelledby={titleId}
             tabIndex={-1}
-            className="relative w-full sm:max-w-xl max-h-[92dvh] sm:max-h-[86dvh] flex flex-col bg-surface rounded-t-[28px] sm:rounded-[28px] shadow-[var(--shadow-float)] outline-none overflow-hidden"
+            className={`relative w-full ${ancho === "amplio" ? "sm:max-w-[880px]" : "sm:max-w-xl"} max-h-[92dvh] sm:max-h-[86dvh] flex flex-col bg-surface rounded-t-[28px] sm:rounded-[28px] shadow-[var(--shadow-float)] outline-none overflow-hidden`}
             initial={{ opacity: 0, y: 60, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1, transition: { type: "spring", bounce: 0.2, duration: 0.5 } }}
             exit={{ opacity: 0, y: 40, transition: { duration: 0.2, ease: "easeIn" } }}
@@ -144,7 +147,7 @@ export const Sheet: React.FC<SheetProps> = ({
                 onPointerDown={startDrag}
               >
                 <div className="min-w-0">
-                  <h2 id={titleId} className="display text-[26px] sm:text-[28px] font-bold leading-tight text-ink">
+                  <h2 id={titleId} className="display text-[24px] sm:text-[26px] font-semibold leading-tight text-ink">
                     {title}
                   </h2>
                   {description && (

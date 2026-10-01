@@ -3,34 +3,54 @@
 /* Variante para el modo liviano (atributo data-liviano en <html>, ver MotionProvider) */
 @custom-variant liviano (&:where([data-liviano], [data-liviano] *));
 
+/* Pantallas anchas pero bajas (notebook de 1366x600 con la barra del navegador): menos aire vertical arriba */
+@custom-variant bajo (@media (min-width: 1024px) and (max-height: 760px));
+
 @theme {
-  /* Superficies al estilo MODO: página casi blanca, paneles gris claro y tarjetas blancas con borde finísimo */
-  --color-canvas: #F9F9F7;
+  /* Fondo piedra liso: las tarjetas blancas se despegan y el verde de los descuentos resalta */
+  --color-canvas: #EEEDE8;
   --color-surface: #FFFFFF;
-  --color-panel: #F0F0ED;
-  --color-fill: #EDEDEA;
-  --color-fill-strong: #E2E2DE;
-  --color-hairline: #EBEBE7;
+  --color-panel: #F3F2EE;
+  --color-fill: #E4E3DD;
+  --color-fill-strong: #D7D6CF;
+  --color-hairline: #E3E2DC;
 
   /* Tinta: casi negra para títulos, números y acciones principales */
   --color-ink: #131517;
   --color-ink-2: #464B52;
   --color-ink-3: #6A6F76;
 
-  /* Acento verde solo en detalles (íconos, marcas, "mejor opción"); terracota solo para advertencias */
+  /* Acento verde: reintegros, estado activo y detalles. Terracota solo para advertencias (y el ícono de MODO) */
   --color-accent: #0F7A58;
   --color-accent-strong: #0B6247;
   --color-accent-soft: #E3F4EC;
+  --color-accent-line: rgb(15 122 88 / 0.2);
+
+  /*
+   * Acción: botones principales y lo elegido (rubro, filtro, marcas). Tinta, no verde: el verde queda para la
+   * plata (reintegros, "Tu mejor opción") y así se lee como "esto es un descuento" sin competir con los botones.
+   */
+  --color-action: #131517;
+  --color-action-strong: #2A2D31;
+  --color-action-soft: #EDEDEA;
+
+  /* Pie: la misma tinta casi negra de los botones (no negro puro), con un menta claro para detalles */
+  --color-pie: #131517;
+  --color-pie-acento: #8FD9B6;
   --color-warn: #A8461F;
   --color-warn-soft: #FBEFE8;
 
-  --font-sans: var(--font-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: var(--font-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Breakpoint propio entre lg (1024) y xl (1280): 3 columnas desde iPad horizontal (1180), 2 en el M4 vertical (1032) */
+  --breakpoint-ipad: 50rem; /* 800px: iPad 10ª, Air y Pro 11" en vertical; el iPad mini (744) usa el diseño de tablet chica */
+  --breakpoint-tab: 68.75rem; /* 1100px; en rem como los de Tailwind, si no se ordena mal contra md/lg */
 
-  /* La primera capa es un borde de 1px: todas las tarjetas quedan definidas sin sumar bordes a mano */
-  --shadow-card: 0 0 0 1px rgb(19 21 23 / 0.06), 0 1px 2px rgb(19 21 23 / 0.04), 0 8px 24px rgb(19 21 23 / 0.04);
-  --shadow-float: 0 0 0 1px rgb(19 21 23 / 0.06), 0 24px 64px rgb(19 21 23 / 0.16);
-  --shadow-segment: 0 0 0 1px rgb(19 21 23 / 0.05), 0 1px 3px rgb(19 21 23 / 0.08);
+  --font-sans: var(--font-instrument), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-instrument), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Sombras con un tinte verde oscuro: se sienten parte del papel, no un gris encima */
+  --shadow-card: 0 0 0 1px rgb(20 50 40 / 0.07), 0 10px 30px rgb(20 50 40 / 0.06);
+  --shadow-float: 0 0 0 1px rgb(20 50 40 / 0.08), 0 24px 64px rgb(20 50 40 / 0.18);
+  --shadow-segment: 0 0 0 1px rgb(20 50 40 / 0.07), 0 1px 3px rgb(20 50 40 / 0.1);
 }
 
 html {
@@ -47,8 +67,6 @@ body {
   font-family: var(--font-sans);
   min-height: 100vh;
   line-height: 1.5;
-  /* Plus Jakarta tiene un espacio entre palabras angosto: se abre un poco para leer mejor */
-  word-spacing: 0.08em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -58,15 +76,59 @@ button, a {
   -webkit-tap-highlight-color: transparent;
 }
 
+/*
+ * Tailwind v4 dejó los botones con el cursor por defecto: se devuelve la manito a todo lo que se toca.
+ * Va en la capa base, así una utilidad (cursor-grab, cursor-not-allowed) la puede pisar.
+ */
+@layer base {
+  button:not(:disabled),
+  [role="button"],
+  [role="radio"],
+  a[href],
+  summary,
+  select,
+  label:has(> input[type="checkbox"], > input[type="radio"]) {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
 button:focus-visible, a:focus-visible, input:focus-visible {
-  outline: 3px solid var(--color-accent);
+  outline: 3px solid var(--color-action);
   outline-offset: 2px;
 }
 
-/* Titulares al estilo Apple: tracking negativo, peso firme */
+/* Titulares: apretados y con peso firme */
 .display {
   font-family: var(--font-display);
-  letter-spacing: -0.025em;
+  letter-spacing: -0.035em;
+}
+
+/*
+ * Tarjeta: blanca, borde neutro de 1px y radio grande. Al pasar el mouse sube 2px, el borde se marca un poco
+ * y la sombra crece. Sin halos de color: el verde queda para los descuentos.
+ */
+.tarjeta {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid rgb(19 21 23 / 0.08);
+  box-shadow: 0 10px 30px rgb(19 21 23 / 0.05);
+  transition: box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease;
+}
+.tarjeta-interactiva:hover {
+  transform: translateY(-2px);
+  border-color: rgb(19 21 23 / 0.16);
+  box-shadow: 0 16px 40px rgb(19 21 23 / 0.09);
+}
+.tarjeta-interactiva:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* Logo en círculo con un aro menta, como una ficha */
+.aro {
+  box-shadow: 0 0 0 1px rgb(15 122 88 / 0.25), 0 0 0 5px var(--color-accent-soft), 0 6px 16px rgb(20 50 40 / 0.1);
 }
 
 /*
@@ -74,16 +136,16 @@ button:focus-visible, a:focus-visible, input:focus-visible {
  * arriba y una línea fina abajo que se marca al bajar. En modo liviano queda sólido (ver más abajo).
  */
 .vidrio {
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.72), rgb(255 255 255 / 0.55));
+  background: linear-gradient(180deg, rgb(255 255 253 / 0.74), rgb(252 252 249 / 0.58));
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), 0 1px 0 rgb(19 21 23 / 0.04);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), 0 1px 0 rgb(20 50 40 / 0.05);
 }
 .vidrio-activo {
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), 0 1px 0 rgb(19 21 23 / 0.08), 0 8px 24px rgb(19 21 23 / 0.06);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), 0 1px 0 rgb(20 50 40 / 0.09), 0 8px 24px rgb(20 50 40 / 0.06);
 }
 html[data-liviano] .vidrio {
-  background: var(--color-surface);
+  background: var(--color-canvas);
 }
 
 /* Scrollbar discreta dentro de los modales (su lista scrollea; título, buscador y acción quedan fijos) */
@@ -101,6 +163,17 @@ html[data-liviano] {
   --shadow-card: 0 0 0 1px var(--color-hairline);
   --shadow-segment: 0 0 0 1px var(--color-fill-strong);
   --shadow-float: 0 0 0 1px var(--color-hairline);
+}
+
+html[data-liviano] .tarjeta {
+  box-shadow: none;
+}
+html[data-liviano] .tarjeta-interactiva:hover {
+  transform: none;
+  border-color: rgb(19 21 23 / 0.3);
+}
+html[data-liviano] .aro {
+  box-shadow: 0 0 0 1px rgb(15 122 88 / 0.25), 0 0 0 4px var(--color-accent-soft);
 }
 
 html[data-liviano] *,

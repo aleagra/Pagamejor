@@ -6,6 +6,8 @@ import { CaretDown, Check, MagnifyingGlass } from "@phosphor-icons/react";
 import { BancoBilletera } from "@/data/schema";
 import { Sheet } from "@/components/Sheet";
 import { BankBadge } from "@/components/BankBadge";
+import { ComoPagoSelector } from "@/components/ComoPago";
+import type { RecursoPago } from "@/logic/formasPago";
 
 interface WalletModalProps {
   isOpen: boolean;
@@ -14,7 +16,9 @@ interface WalletModalProps {
   /** Ids con al menos una promo activa. Los demás se muestran deshabilitados ("En verificación"). */
   bankIdsDisponibles: string[];
   selectedBankIds: string[];
-  onSave: (newSelectedIds: string[]) => void;
+  /** Con qué puede pagar (NFC, app, tarjeta): se elige acá junto con los medios. */
+  recursos: RecursoPago[];
+  onSave: (newSelectedIds: string[], recursos: RecursoPago[]) => void;
   isInitialOnboarding?: boolean;
 }
 
@@ -24,28 +28,31 @@ export const WalletModal: React.FC<WalletModalProps> = ({
   bancos,
   bankIdsDisponibles,
   selectedBankIds,
+  recursos,
   onSave,
   isInitialOnboarding = false,
 }) => {
   const disponibles = new Set(bankIdsDisponibles);
   const soloDisponibles = (ids: string[]) => ids.filter((id) => disponibles.has(id));
   const [currentSelection, setCurrentSelection] = useState<string[]>(soloDisponibles(selectedBankIds));
+  const [currentRecursos, setCurrentRecursos] = useState<RecursoPago[]>(recursos);
   const [busqueda, setBusqueda] = useState("");
   // Grupos cerrados por la persona (arrancan todos abiertos)
   const [colapsados, setColapsados] = useState<string[]>([]);
 
   useEffect(() => {
     setCurrentSelection(soloDisponibles(selectedBankIds));
+    setCurrentRecursos(recursos);
     setBusqueda("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBankIds, isOpen]);
+  }, [selectedBankIds, recursos, isOpen]);
 
   const toggleBank = (id: string) => {
     setCurrentSelection((sel) => (sel.includes(id) ? sel.filter((b) => b !== id) : [...sel, id]));
   };
 
   const handleSave = () => {
-    onSave(currentSelection);
+    onSave(currentSelection, currentRecursos);
     onClose();
   };
 
@@ -69,7 +76,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
       onClose={onClose}
       dismissible={!isInitialOnboarding}
       title={isInitialOnboarding ? "Te damos la bienvenida" : "Mi billetera"}
-      description="Marcá los bancos y billeteras que tenés. Solo vas a ver promociones de los que elijas acá."
+      description="Marcá cómo pagás y qué bancos y billeteras tenés. Solo vas a ver promociones que podés usar."
       toolbar={
         // Fijo arriba: buscador y cuántos hay elegidos, siempre a la vista
         <div className="flex items-center gap-2.5">
@@ -78,14 +85,14 @@ export const WalletModal: React.FC<WalletModalProps> = ({
             <MagnifyingGlass className="absolute left-4 text-ink-3" size={20} aria-hidden="true" />
             <input
               type="search"
-              className="w-full min-h-12 pl-11 pr-4 bg-fill rounded-2xl text-[17px] text-ink placeholder:text-ink-3 focus:bg-surface focus:ring-2 focus:ring-accent outline-none transition-colors duration-200"
+              className="w-full min-h-12 pl-11 pr-4 bg-fill rounded-2xl text-[17px] text-ink placeholder:text-ink-3 focus:bg-surface focus:ring-2 focus:ring-action outline-none transition-colors duration-200"
               placeholder="Buscar (ej. Galicia, Ualá…)"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
           </label>
           <span
-            className="shrink-0 min-h-12 px-3.5 inline-flex items-center gap-1.5 rounded-2xl bg-accent-soft text-base font-semibold text-accent-strong tabular-nums"
+            className="shrink-0 min-h-12 px-3.5 inline-flex items-center gap-1.5 rounded-2xl bg-action-soft text-base font-semibold text-ink tabular-nums"
             aria-live="polite"
           >
             <Check size={16} weight="bold" aria-hidden="true" />
@@ -105,6 +112,8 @@ export const WalletModal: React.FC<WalletModalProps> = ({
         </button>
       }
     >
+      {/* Primero cómo paga (tres opciones), después qué bancos y billeteras tiene. Al buscar, solo la lista */}
+      {termino === "" && <ComoPagoSelector value={currentRecursos} onChange={setCurrentRecursos} />}
       {grupos.length === 0 && (
         <p className="text-center text-ink-3 py-10 text-lg">No encontramos &quot;{busqueda}&quot;.</p>
       )}
@@ -175,7 +184,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                         {isDisponible && (
                           <span
                             className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors duration-200 ${
-                              isSelected ? "bg-accent text-white" : "border-2 border-fill-strong bg-surface"
+                              isSelected ? "bg-action text-white" : "border-2 border-fill-strong bg-surface"
                             }`}
                             aria-hidden="true"
                           >

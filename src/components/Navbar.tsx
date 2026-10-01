@@ -42,28 +42,28 @@ export const Navbar: React.FC<NavbarProps> = ({ walletCount, onOpenWallet, rubro
     >
       {/* Barra de ancho completo con efecto vidrio (liquid glass): translúcida, desenfocada y con reflejo */}
       <div className={CONTENEDOR}>
-        <div className="h-16 lg:h-[72px] flex items-center justify-between gap-4">
+        <div className="h-16 flex items-center justify-between gap-4">
           <button
             type="button"
             onClick={volverArriba}
-            className="display text-[22px] font-extrabold tracking-[-0.03em] text-ink min-h-12 -ml-1 px-1 rounded-lg"
+            className="display text-[20px] font-bold tracking-[-0.04em] text-ink min-h-11 -ml-1 px-1 rounded-lg"
             aria-label="PagaMejor, volver arriba"
           >
             Paga<span className="text-accent">Mejor</span>
           </button>
 
           {/* Escritorio: el selector de rubros vive en la barra, siempre a mano */}
-          {rubros && <div className="hidden lg:block">{rubros}</div>}
+          {rubros && <div className="hidden md:block">{rubros}</div>}
 
           <motion.button
             type="button"
             onClick={onOpenWallet}
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center gap-2 whitespace-nowrap min-h-12 pl-4 pr-2 rounded-full bg-white/70 liviano:bg-surface text-[17px] font-semibold text-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_0_0_1px_rgb(19_21_23/0.07),0_2px_8px_rgb(19_21_23/0.06)] hover:bg-white transition-colors duration-200"
+            className="inline-flex items-center gap-2 whitespace-nowrap min-h-11 pl-4 pr-1.5 rounded-full bg-white/80 liviano:bg-surface text-[15px] font-semibold text-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_0_0_1px_rgb(19_21_23/0.08),0_2px_8px_rgb(19_21_23/0.06)] hover:bg-white transition-colors duration-200"
             aria-label={`Mi billetera: ${walletCount} ${walletCount === 1 ? "medio de pago" : "medios de pago"}. Tocar para editar.`}
           >
-            <Wallet size={20} aria-hidden="true" />
+            <Wallet size={18} weight="bold" aria-hidden="true" />
             <span>Mi billetera</span>
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.span
@@ -71,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({ walletCount, onOpenWallet, rubro
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.5, opacity: 0 }}
-                className="min-w-8 h-8 px-2 inline-flex items-center justify-center rounded-full bg-ink text-base font-semibold tabular-nums text-white"
+                className="min-w-7 h-7 px-1.5 inline-flex items-center justify-center rounded-full bg-action text-[15px] font-semibold tabular-nums text-white"
               >
                 {walletCount}
               </motion.span>

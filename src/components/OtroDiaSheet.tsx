@@ -58,7 +58,7 @@ export const OtroDiaSheet: React.FC<OtroDiaSheetProps> = ({ isOpen, onClose, tod
                   <span className="block text-lg font-semibold leading-snug text-ink">{d.titulo}</span>
                   {d.detalle && <span className="block text-base leading-snug text-ink-3">{d.detalle}</span>}
                 </span>
-                {activo && <Check size={22} weight="bold" className="shrink-0 text-accent" aria-hidden="true" />}
+                {activo && <Check size={22} weight="bold" className="shrink-0 text-ink" aria-hidden="true" />}
               </button>
             </li>
           );

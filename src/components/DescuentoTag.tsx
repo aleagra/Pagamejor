@@ -11,7 +11,7 @@ interface DescuentoTagProps {
 /** Etiqueta verde de descuento: el único uso del verde en la app es "esto es tu reintegro". */
 export const DescuentoTag: React.FC<DescuentoTagProps> = ({ porcentaje, hasta = false, hastaSoloEnGrande = false }) => (
   <span
-    className="inline-flex items-baseline gap-1 shrink-0 rounded-xl bg-accent-soft px-2.5 py-1 text-accent-strong whitespace-nowrap"
+    className="inline-flex items-baseline gap-1 shrink-0 rounded-full bg-accent-soft border border-accent-line px-3 py-0.5 text-accent-strong whitespace-nowrap"
     aria-label={`${hasta ? "hasta " : ""}${porcentaje}% de reintegro`}
   >
     {hasta && (
@@ -19,7 +19,7 @@ export const DescuentoTag: React.FC<DescuentoTagProps> = ({ porcentaje, hasta = 
         hasta
       </span>
     )}
-    <span className="display text-[20px] font-extrabold leading-tight tracking-[-0.03em] tabular-nums" aria-hidden="true">
+    <span className="display text-[19px] font-bold leading-tight tabular-nums" aria-hidden="true">
       {porcentaje}%
     </span>
   </span>

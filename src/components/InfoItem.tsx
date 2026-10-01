@@ -16,15 +16,15 @@ export const InfoItem: React.FC<InfoItemProps> = ({ icon: Icono, label, children
   <div className="flex items-start gap-3.5 min-w-0">
     <span
       className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-        tono === "aviso" ? "bg-warn-soft text-warn" : "bg-accent-soft text-accent"
+        tono === "aviso" ? "bg-warn-soft text-warn" : "bg-panel text-ink-2"
       }`}
       aria-hidden="true"
     >
       <Icono size={20} weight="bold" />
     </span>
     <div className="min-w-0 pt-px">
-      <div className="text-base text-ink-3 leading-snug">{label}</div>
-      <div className="text-base text-ink leading-snug">{children}</div>
+      <div className="text-base text-ink-3 leading-snug mb-0.5">{label}</div>
+      <div className="text-base text-ink leading-relaxed">{children}</div>
     </div>
   </div>
 );
@@ -43,7 +43,7 @@ export const DiasChips: React.FC<{ diasSemana: number[] }> = ({ diasSemana }) =>
           key={l}
           aria-hidden="true"
           className={`w-8 h-8 rounded-lg flex items-center justify-center text-base font-semibold ${
-            activos.has(i) ? "bg-surface text-accent shadow-[0_0_0_1.5px_var(--color-accent)]" : "bg-panel text-ink-3/60"
+            activos.has(i) ? "bg-surface text-ink shadow-[0_0_0_1.5px_var(--color-action)]" : "bg-panel text-ink-3/60"
           }`}
         >
           {l}

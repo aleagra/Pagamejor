@@ -41,7 +41,12 @@ export const RubroTabs: React.FC<RubroTabsProps> = ({
   const indicador = (
     <motion.span
       layoutId={layoutId}
-      className={`absolute inset-0 ${enBarra ? "rounded-full" : "rounded-2xl"} bg-surface shadow-[var(--shadow-segment)]`}
+      className={`absolute inset-0 ${
+        enBarra
+          ? // En la barra, el rubro elegido va en una píldora de tinta: se ve de lejos sin sumar más verde
+            "rounded-full bg-action shadow-[0_4px_12px_rgb(19_21_23/0.16)]"
+          : "rounded-2xl bg-surface shadow-[var(--shadow-segment)]"
+      }`}
       transition={{ type: "spring", bounce: 0.22, duration: 0.5 }}
       aria-hidden="true"
     />
@@ -49,10 +54,10 @@ export const RubroTabs: React.FC<RubroTabsProps> = ({
 
   const claseBoton = (activo: boolean) =>
     enBarra
-      ? `relative inline-flex items-center gap-2 min-h-12 px-4 rounded-full text-[17px] font-semibold whitespace-nowrap transition-colors duration-200 ${
-          activo ? "text-ink" : "text-ink-2 hover:text-ink"
+      ? `relative inline-flex items-center gap-1.5 min-h-10 px-3.5 rounded-full text-[15px] font-medium whitespace-nowrap transition-colors duration-200 ${
+          activo ? "text-white" : "text-ink-2 hover:text-ink hover:bg-black/[0.04]"
         }`
-      : `relative flex flex-col items-center justify-center gap-1 min-h-[68px] px-1 rounded-2xl text-base font-semibold transition-colors duration-200 ${
+      : `relative flex flex-col items-center justify-center gap-1 min-h-[68px] px-0.5 rounded-2xl text-base font-semibold transition-colors duration-200 ${
           activo ? "text-ink" : "text-ink-2"
         }`;
 
@@ -61,9 +66,9 @@ export const RubroTabs: React.FC<RubroTabsProps> = ({
       {activo && indicador}
       <RubroIcon
         rubro={id}
-        size={enBarra ? 20 : 24}
+        size={enBarra ? 18 : 24}
         weight={activo ? "fill" : "regular"}
-        className={`relative ${activo ? "text-accent" : ""}`}
+        className={`relative ${activo && !enBarra ? "text-ink" : ""}`}
       />
       {enBarra ? (
         // En laptops chicas no entran los nombres completos: van los cortos hasta 1280px
@@ -72,7 +77,7 @@ export const RubroTabs: React.FC<RubroTabsProps> = ({
           <span className="hidden xl:inline">{nombre}</span>
         </span>
       ) : (
-        <span className="relative truncate max-w-full">{RUBRO_CORTO[id]}</span>
+        <span className="relative truncate max-w-full tracking-[-0.02em]">{RUBRO_CORTO[id]}</span>
       )}
     </>
   );
@@ -83,7 +88,7 @@ export const RubroTabs: React.FC<RubroTabsProps> = ({
       aria-label="Rubro de la compra"
       className={
         enBarra
-          ? "flex items-center gap-0.5 p-1 rounded-full bg-black/[0.05] liviano:bg-fill"
+          ? "flex items-center gap-1"
           : "grid grid-cols-4 gap-1 p-1 rounded-[20px] bg-fill"
       }
     >
@@ -118,7 +123,7 @@ export const RubroTabs: React.FC<RubroTabsProps> = ({
           contenido(otroElegido.id, otroElegido.nombre, true)
         ) : (
           <>
-            <DotsThreeCircle size={enBarra ? 20 : 24} className="relative" aria-hidden="true" />
+            <DotsThreeCircle size={enBarra ? 18 : 24} className="relative" aria-hidden="true" />
             <span className="relative">Más</span>
           </>
         )}

@@ -12,6 +12,7 @@ import {
   type MetodoPago as MetodoPagoInfo,
   formatMoneda,
   formatTope,
+  maxPorcentajeDetalle,
   metodoPago,
   nombreVariante,
 } from "@/components/format";
@@ -49,7 +50,7 @@ function fechaCorta(iso: string): string {
 function IconoMedio({ metodo }: { metodo: MetodoPagoInfo }) {
   const Icon = iconoDeForma(metodo.formas[0]);
   return (
-    <span className="w-11 h-11 rounded-full bg-accent-soft flex items-center justify-center shrink-0 text-accent" aria-hidden="true">
+    <span className="w-11 h-11 rounded-full bg-panel flex items-center justify-center shrink-0 text-ink-2" aria-hidden="true">
       <Icon size={21} weight="bold" />
     </span>
   );
@@ -91,7 +92,7 @@ function OpcionRow({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-controls={panelId}
-        className="w-[calc(100%+1.5rem)] -mx-3 flex items-center gap-4 px-3 py-3.5 min-h-[72px] rounded-2xl text-left hover:bg-black/[0.03] active:bg-black/[0.05] transition-colors duration-200"
+        className="w-[calc(100%+1.5rem)] -mx-3 flex items-center gap-4 px-3 py-3 min-h-[68px] rounded-2xl text-left hover:bg-black/[0.03] active:bg-black/[0.05] transition-colors duration-200"
       >
         <IconoMedio metodo={metodo} />
         <span className="flex-1 min-w-0">
@@ -99,6 +100,10 @@ function OpcionRow({
           {/* Cómo se paga: lo que distingue dos opciones del mismo comercio */}
           <MetodoPagoLinea metodo={metodo} className="mt-0.5" />
           <span className="block text-base leading-snug text-ink-3">{resumen}</span>
+          {/* Promo de lugares puntuales: se avisa, para que nadie la tome por un descuento de todos lados */}
+          {promo?.alcanceLimitado && (
+            <span className="block text-base leading-snug text-warn">Solo en algunos lugares puntuales</span>
+          )}
         </span>
         <motion.span
           animate={{ rotate: open ? 180 : 0 }}
@@ -120,14 +125,18 @@ function OpcionRow({
             className="overflow-hidden"
           >
             <motion.div
-              className="flex flex-col gap-4 pb-5 sm:pl-[60px]"
+              // El detalle va en un recuadro propio, con aire: se distingue de la fila y de la opción siguiente
+              className="mb-4 sm:ml-[60px] rounded-2xl bg-canvas shadow-[inset_0_0_0_1px_var(--color-hairline)] p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-6"
               initial={{ y: -8 }}
               animate={{ y: 0 }}
               exit={{ y: -8 }}
             >
-              <InfoItem icon={HandTap} label="Cómo pagar">
-                <span className="font-normal">{v.condicionUso}</span>
-              </InfoItem>
+              {/* Cómo pagar y lo que hay que tener en cuenta ocupan el ancho; los datos cortos van de a dos */}
+              <div className="sm:col-span-2">
+                <InfoItem icon={HandTap} label="Cómo pagar">
+                  <span className="font-normal">{v.condicionUso}</span>
+                </InfoItem>
+              </div>
               {v.medioPagoDetalle && (
                 <InfoItem icon={CreditCard} label="Medio de pago">
                   {v.medioPagoDetalle}
@@ -161,8 +170,8 @@ function OpcionRow({
                 </InfoItem>
               )}
               {v.aclaraciones && (
-                <div className="rounded-2xl bg-panel px-4 py-3.5">
-                  <p className="text-base font-semibold text-ink-2 mb-1">A tener en cuenta</p>
+                <div className="sm:col-span-2 rounded-2xl bg-surface shadow-[inset_0_0_0_1px_var(--color-hairline)] px-5 py-4">
+                  <p className="text-base font-semibold text-ink-2 mb-1.5">A tener en cuenta</p>
                   <p className="text-base leading-relaxed text-ink-3">{v.aclaraciones}</p>
                 </div>
               )}
@@ -171,7 +180,7 @@ function OpcionRow({
                   href={v.fuenteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 min-h-12 self-start px-4 rounded-full bg-panel text-base font-semibold text-ink hover:bg-fill transition-colors duration-200"
+                  className="sm:col-span-2 justify-self-start inline-flex items-center gap-2 min-h-12 px-4 rounded-full bg-surface shadow-[inset_0_0_0_1px_var(--color-hairline)] text-base font-semibold text-ink hover:shadow-[inset_0_0_0_1px_var(--color-accent-line)] transition-shadow duration-200"
                 >
                   Ver bases y condiciones
                   <ArrowSquareOut size={17} weight="bold" aria-hidden="true" />
@@ -189,13 +198,11 @@ function NivelSection({
   group,
   nivel,
   promosById,
-  unicaOpcion,
   orden,
 }: {
   group: GroupedBankPromo;
   nivel: PromoNivelDescuento;
   promosById: Record<string, Promocion>;
-  unicaOpcion: boolean;
   /** Posición del nivel, para que las secciones entren en cascada. */
   orden: number;
 }) {
@@ -213,7 +220,7 @@ function NivelSection({
       <h3 className="flex items-center gap-2.5 flex-wrap mb-1">
         <DescuentoTag porcentaje={nivel.porcentaje} />
         <span className="text-[17px] font-semibold text-ink">de reintegro</span>
-        <span className="text-base text-ink-3">· {nivel.items.length === 1 ? "1 opción" : `${nivel.items.length} opciones`}</span>
+        {nivel.items.length > 1 && <span className="text-base text-ink-3">· {nivel.items.length} opciones</span>}
       </h3>
 
       <ul className="list-none">
@@ -223,8 +230,8 @@ function NivelSection({
             group={group}
             v={v}
             promo={promosById[v.id]}
-            // La primera opción (la de mayor reintegro) se ve abierta, para quien no toque los acordeones
-            defaultOpen={unicaOpcion || (orden === 0 && idx === 0)}
+            // Todo arranca plegado: de un vistazo se ven todos los lugares con su medio de pago y tope
+            defaultOpen={false}
             separator={idx > 0}
             aparicion={idx >= VISIBLES_POR_NIVEL ? Math.min(idx - VISIBLES_POR_NIVEL, 10) * 0.035 : undefined}
           />
@@ -262,21 +269,14 @@ export const PromoDetail: React.FC<PromoDetailProps> = ({ group, banco, promosBy
             </h2>
             <p className="text-base text-ink-3">
               {variosNiveles ? "Hasta " : ""}
-              {group.maxPorcentaje}% de reintegro · {group.diasTexto}
+              {maxPorcentajeDetalle(group)}% de reintegro · {group.diasTexto}
             </p>
           </div>
         </header>
       )}
 
       {group.niveles.map((nivel, i) => (
-        <NivelSection
-          orden={i}
-          key={nivel.porcentaje}
-          group={group}
-          nivel={nivel}
-          promosById={promosById}
-          unicaOpcion={group.variantes.length === 1}
-        />
+        <NivelSection orden={i} key={nivel.porcentaje} group={group} nivel={nivel} promosById={promosById} />
       ))}
 
       <p className="px-1 pt-1 text-base leading-relaxed text-ink-3">

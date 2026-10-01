@@ -1,165 +1,206 @@
 "use client";
 
-import React from "react";
-import { AnimatePresence, motion } from "motion/react";
+import React, { useState } from "react";
+import { motion } from "motion/react";
 import { BancoBilletera } from "@/data/schema";
 import { GroupedBankPromo } from "@/logic/types";
 import { BankBadge } from "@/components/BankBadge";
 import { DescuentoTag } from "@/components/DescuentoTag";
 import { EASE_OUT, useModoLiviano } from "@/components/MotionProvider";
-import { metodoPago, resumenComercios, resumenTope } from "@/components/format";
+import {
+  type ComparacionMismoPorcentaje,
+  comparacionMismoPorcentaje,
+  hayVariosPorcentajes,
+  metodoPago,
+  resumenComercios,
+  resumenTope,
+} from "@/components/format";
 import { MetodoPagoLinea } from "@/components/MetodoPago";
-import { CaretDown, CaretRight } from "@phosphor-icons/react";
+import { ArrowRight } from "@phosphor-icons/react";
 
 interface AlternativePromosListProps {
   groups: GroupedBankPromo[];
+  /** La mejor opción del día: con ella se comparan los que dan el mismo porcentaje. */
+  mejor: GroupedBankPromo;
   bancosMap: Record<string, BancoBilletera>;
-  /** Banco con el desglose abierto (uno a la vez en toda la pantalla). */
-  expandedId: string | null;
-  onToggle: (bankId: string, elemento: HTMLElement | null) => void;
-  /** Desglose por comercio y nivel de reintegro de un banco (PromoDetail). */
-  renderDetalle: (g: GroupedBankPromo) => React.ReactNode;
-  /** Celular: tocar una fila abre su desglose en una hoja que sube desde abajo en vez de expandirla. */
-  abreHoja?: boolean;
+  /** Abre el desglose de un banco (hoja en el celular, ventana centrada en escritorio). */
+  onAbrir: (bankId: string) => void;
 }
 
-interface FilaProps {
+type Filtro = "todas" | "billeteras" | "bancos";
+
+/** Por qué quedó detrás de otro con el mismo %: una línea gris corta bajo el nombre. */
+// Se dice el dato, sin nombrar a otra tarjeta ni repetir el % (ya está en la etiqueta verde de al lado)
+const COMPARACION: Record<ComparacionMismoPorcentaje["tipo"], string> = {
+  igual: "Mismo % y tope",
+  "menor-tope": "Mismo %, menor tope",
+  "mayor-minimo": "Mismo %, pide mínimo",
+};
+
+function Tarjeta({
+  g,
+  banco,
+  idx,
+  liviano,
+  onAbrir,
+  comparacion,
+}: {
   g: GroupedBankPromo;
   banco?: BancoBilletera;
   idx: number;
-  abierta: boolean;
   liviano: boolean;
-  onToggle: (bankId: string, elemento: HTMLElement | null) => void;
-  detalle: React.ReactNode;
-  abreHoja: boolean;
-}
-
-function Fila({ g, banco, idx, abierta, liviano, onToggle, detalle, abreHoja }: FilaProps) {
-  const resumen = [resumenComercios(g.niveles[0]?.items ?? g.variantes), resumenTope(g)].filter(Boolean).join(" · ");
+  onAbrir: (bankId: string) => void;
+  comparacion: ComparacionMismoPorcentaje | null;
+}) {
+  // Todos los lugares del banco (de mayor a menor reintegro), para que no parezca que es uno solo
+  const comercios = resumenComercios(g.variantes, 1);
   const metodo = metodoPago(g.bestPromo.medioPagoDetalle, g.bestPromo.condicionUso, g.bestPromo.tipoMedioRequerido);
-  const detalleId = `detalle-${g.bancoBilleteraId}`;
-  const filaRef = React.useRef<HTMLLIElement>(null);
+  const opciones = g.totalOpciones === 1 ? "1 opción" : `${g.totalOpciones} opciones`;
+  const nota = comparacion ? COMPARACION[comparacion.tipo] : null;
 
   return (
     <motion.li
-      ref={filaRef}
-      className="relative"
-      // En modo liviano las filas se muestran directo, sin esperar a entrar en pantalla
+      className="flex"
+      // En modo liviano las tarjetas se muestran directo, sin esperar a entrar en pantalla
       initial={liviano ? false : { opacity: 0, y: 18 }}
       whileInView={liviano ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-20px" }}
-      transition={{ type: "spring", bounce: 0.18, duration: 0.55, delay: 0.12 + Math.min(idx, 4) * 0.06 }}
+      transition={{ type: "spring", bounce: 0.18, duration: 0.55, delay: 0.08 + Math.min(idx, 5) * 0.05 }}
     >
-      {idx > 0 && <div className="absolute top-0 right-4 left-[76px] h-px bg-hairline" aria-hidden="true" />}
-      <motion.button
+      <button
         type="button"
-        onClick={() => onToggle(g.bancoBilleteraId, filaRef.current)}
-        aria-expanded={abreHoja ? undefined : abierta}
-        aria-controls={abreHoja ? undefined : detalleId}
-        aria-haspopup={abreHoja ? "dialog" : undefined}
-        whileTap={{ scale: 0.99 }}
-        className="group relative w-full flex items-center gap-4 pl-4 pr-3 py-3.5 min-h-[76px] text-left hover:bg-canvas/60 transition-colors duration-200"
+        onClick={() => onAbrir(g.bancoBilleteraId)}
+        aria-haspopup="dialog"
+        className="tarjeta tarjeta-interactiva group w-full flex flex-col gap-2 rounded-3xl p-4 sm:p-5 text-left"
       >
-        <BankBadge banco={banco} />
-
-        <span className="flex-1 min-w-0">
-          {/* Un solo énfasis: el nombre (con su reintegro al lado). Lo demás, en el mismo tono secundario */}
-          <span className="flex items-center justify-between gap-3">
-            <span className="min-w-0 text-[17px] font-semibold leading-snug text-ink truncate">{g.bancoBilleteraNombre}</span>
-            <DescuentoTag porcentaje={g.maxPorcentaje} hasta={g.niveles.length > 1} hastaSoloEnGrande />
+        {/* Un solo énfasis: el nombre, con su reintegro al lado. Lo demás, en el mismo tono secundario */}
+        <span className="flex items-center gap-3 w-full">
+          <BankBadge banco={banco} aro />
+          <span className="flex-1 min-w-0">
+            <span className="block text-[17px] font-semibold leading-snug text-ink line-clamp-2">
+              {g.bancoBilleteraNombre}
+            </span>
+            {/* Si da el mismo % que otro de más arriba, por qué quedó detrás (entra en el alto del logo) */}
+            {nota && <span className="block text-base leading-snug text-ink-3 line-clamp-2">{nota}</span>}
           </span>
-          {resumen && <span className="block mt-0.5 text-base leading-snug text-ink-3 line-clamp-2 sm:line-clamp-1">{resumen}</span>}
-          <MetodoPagoLinea metodo={metodo} className="mt-0.5" />
+          <DescuentoTag porcentaje={g.maxPorcentaje} hasta={hayVariosPorcentajes(g)} hastaSoloEnGrande />
         </span>
 
-        <motion.span
-          animate={{ rotate: !abreHoja && abierta ? 180 : 0 }}
-          transition={{ type: "spring", bounce: 0.3, duration: 0.4 }}
-          className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-ink-3"
-          aria-hidden="true"
-        >
-          {abreHoja ? <CaretRight size={18} weight="bold" /> : <CaretDown size={18} weight="bold" />}
-        </motion.span>
-      </motion.button>
+        <span className="flex flex-col gap-0.5">
+          {comercios && <span className="text-base leading-snug text-ink-3 line-clamp-2">{comercios}</span>}
+          <MetodoPagoLinea metodo={metodo} />
+        </span>
 
-      <AnimatePresence initial={false}>
-        {abierta && !abreHoja && (
-          <motion.div
-            id={detalleId}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="mx-3 mb-3 rounded-2xl bg-canvas px-4 sm:px-5 py-5">{detalle}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <span className="mt-auto pt-2.5 border-t border-hairline flex items-center justify-between gap-3 w-full">
+          <span className="text-base leading-snug text-ink-3">{resumenTope(g)}</span>
+          <span className="shrink-0 inline-flex items-center gap-1 text-base font-semibold text-ink">
+            <span className="sr-only sm:not-sr-only">{opciones}</span>
+            <ArrowRight
+              size={17}
+              weight="bold"
+              className="transition-transform duration-300 group-hover:translate-x-0.5"
+              aria-hidden="true"
+            />
+          </span>
+        </span>
+      </button>
     </motion.li>
   );
 }
 
 /**
- * El resto de la billetera en listas agrupadas: primero las billeteras virtuales (lo más usado para pagar) y
- * después los bancos, cada grupo de mayor a menor reintegro según el motor. Es la única estructura de
- * resultados: cada fila se abre en su lugar con su desglose, sin panel aparte que repita la información.
+ * El resto de la billetera en una grilla de tarjetas (una columna en el celular, hasta tres en escritorio),
+ * siempre de mayor a menor descuento en el orden del motor. Si hay billeteras y bancos, se puede filtrar.
  */
-export const AlternativePromosList: React.FC<AlternativePromosListProps> = ({
-  groups,
-  bancosMap,
-  expandedId,
-  onToggle,
-  renderDetalle,
-  abreHoja = false,
-}) => {
+export const AlternativePromosList: React.FC<AlternativePromosListProps> = ({ groups, mejor, bancosMap, onAbrir }) => {
   const { liviano } = useModoLiviano();
+  const [filtro, setFiltro] = useState<Filtro>("todas");
   if (groups.length === 0) return null;
 
-  const secciones = [
-    { titulo: "Billeteras virtuales", items: groups.filter((g) => bancosMap[g.bancoBilleteraId]?.tipo !== "banco") },
-    { titulo: "Bancos", items: groups.filter((g) => bancosMap[g.bancoBilleteraId]?.tipo === "banco") },
-  ].filter((s) => s.items.length > 0);
+  const billeteras = groups.filter((g) => bancosMap[g.bancoBilleteraId]?.tipo !== "banco");
+  const bancos = groups.filter((g) => bancosMap[g.bancoBilleteraId]?.tipo === "banco");
+  const hayAmbos = billeteras.length > 0 && bancos.length > 0;
+  const actual = !hayAmbos ? "todas" : filtro;
+  const visibles = actual === "billeteras" ? billeteras : actual === "bancos" ? bancos : groups;
+  const ordenados = [mejor, ...groups];
+
+  const filtros: { id: Filtro; titulo: string; cantidad: number }[] = [
+    { id: "todas", titulo: "Todas", cantidad: groups.length },
+    { id: "billeteras", titulo: "Billeteras virtuales", cantidad: billeteras.length },
+    { id: "bancos", titulo: "Bancos", cantidad: bancos.length },
+  ];
 
   return (
-    <section className="mt-10" aria-labelledby="otras-title">
+    <section className="mt-8 bajo:mt-6" aria-labelledby="otras-title">
       <motion.div
         initial={liviano ? false : { opacity: 0, y: 16 }}
         whileInView={liviano ? undefined : { opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-40px" }}
         transition={{ duration: 0.5, ease: EASE_OUT }}
-        className="px-1 mb-4"
+        className="flex flex-col tab:flex-row tab:items-end tab:justify-between gap-3 sm:gap-4 mb-4 sm:mb-5"
       >
-        <h2 id="otras-title" className="display text-[22px] font-bold tracking-[-0.02em] text-ink">
-          Otras opciones en tu billetera
-        </h2>
-        <p className="text-base text-ink-3">
-          {groups.length === 1 ? "1 medio de pago más" : `${groups.length} medios de pago más`}. Tocá uno para ver
-          sus comercios y cómo pagar.
-        </p>
+        <div className="px-1">
+          <h2 id="otras-title" className="display text-[24px] font-semibold text-ink">
+            Otras opciones en tu billetera
+          </h2>
+          <p className="text-base text-ink-3">
+            {groups.length === 1 ? "1 medio de pago más" : `${groups.length} medios de pago más`}. Tocá uno para ver sus
+            comercios y cómo pagar.
+          </p>
+        </div>
+
+        {hayAmbos && (
+          <div role="radiogroup" aria-label="Mostrar" className="grid grid-cols-3 gap-1.5 sm:flex sm:gap-2">
+            {filtros.map((f) => {
+              const activo = actual === f.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={activo}
+                  onClick={() => setFiltro(f.id)}
+                  className={`inline-flex items-center justify-center gap-2 min-h-12 px-2 sm:px-4 rounded-full text-base font-semibold transition-[background-color,color,box-shadow] duration-200 ${
+                    activo
+                      ? "bg-action text-white shadow-[0_6px_16px_rgb(19_21_23/0.18)]"
+                      : "bg-surface text-ink shadow-[0_0_0_1px_var(--color-hairline)] hover:shadow-[0_0_0_1px_var(--color-fill-strong)]"
+                  }`}
+                >
+                  {f.id === "billeteras" ? (
+                    // En el celular, "Billeteras" a secas y sin cantidades, para que los tres filtros entren en un renglón
+                    <span>
+                      Billeteras<span className="hidden sm:inline"> virtuales</span>
+                    </span>
+                  ) : (
+                    f.titulo
+                  )}
+                  <span
+                    className={`hidden sm:inline-flex min-w-6 h-6 px-1.5 items-center justify-center rounded-full text-[15px] tabular-nums ${
+                      activo ? "bg-white/20" : "bg-panel text-ink-3"
+                    }`}
+                  >
+                    {f.cantidad}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </motion.div>
 
-      <div className="flex flex-col gap-6">
-        {secciones.map((sec) => (
-          <div key={sec.titulo}>
-            <h3 className="px-1 mb-2 text-base font-semibold text-ink-3">{sec.titulo}</h3>
-            <ul className="bg-surface rounded-[24px] shadow-[var(--shadow-card)] overflow-hidden list-none py-1">
-              {sec.items.map((g, idx) => (
-                <Fila
-                  key={g.bancoBilleteraId}
-                  g={g}
-                  banco={bancosMap[g.bancoBilleteraId]}
-                  idx={idx}
-                  abierta={expandedId === g.bancoBilleteraId}
-                  liviano={liviano}
-                  onToggle={onToggle}
-                  detalle={renderDetalle(g)}
-                  abreHoja={abreHoja}
-                />
-              ))}
-            </ul>
-          </div>
+      <ul key={actual} className="grid grid-cols-1 md:grid-cols-2 tab:grid-cols-3 gap-3 sm:gap-4 list-none">
+        {visibles.map((g, idx) => (
+          <Tarjeta
+            key={g.bancoBilleteraId}
+            g={g}
+            banco={bancosMap[g.bancoBilleteraId]}
+            idx={idx}
+            liviano={liviano}
+            onAbrir={onAbrir}
+            comparacion={comparacionMismoPorcentaje(g, ordenados)}
+          />
         ))}
-      </div>
+      </ul>
     </section>
   );
 };

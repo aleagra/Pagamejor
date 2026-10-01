@@ -44,7 +44,7 @@ export const RubrosModal: React.FC<RubrosModalProps> = ({
           <MagnifyingGlass className="absolute left-4 text-ink-3" size={20} aria-hidden="true" />
           <input
             type="search"
-            className="w-full min-h-12 pl-11 pr-4 bg-fill rounded-2xl text-[17px] text-ink placeholder:text-ink-3 focus:bg-surface focus:ring-2 focus:ring-accent outline-none transition-colors duration-200"
+            className="w-full min-h-12 pl-11 pr-4 bg-fill rounded-2xl text-[17px] text-ink placeholder:text-ink-3 focus:bg-surface focus:ring-2 focus:ring-action outline-none transition-colors duration-200"
             placeholder="Buscar (ej. librería, hogar…)"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -72,7 +72,7 @@ export const RubrosModal: React.FC<RubrosModalProps> = ({
                 >
                   <span
                     className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                      isSelected ? "bg-accent text-white" : "bg-surface text-ink-2"
+                      isSelected ? "bg-action text-white" : "bg-surface text-ink-2"
                     }`}
                   >
                     <RubroIcon rubro={r.id} size={21} weight={isSelected ? "fill" : "regular"} />
@@ -81,7 +81,7 @@ export const RubrosModal: React.FC<RubrosModalProps> = ({
                     <span className="block text-lg font-semibold leading-snug text-ink">{r.nombre}</span>
                     <span className="text-base leading-snug text-ink-3 line-clamp-1">{r.descripcion}</span>
                   </span>
-                  {isSelected && <Check size={22} weight="bold" className="shrink-0 text-accent" aria-hidden="true" />}
+                  {isSelected && <Check size={22} weight="bold" className="shrink-0 text-ink" aria-hidden="true" />}
                 </button>
               </li>
             );
