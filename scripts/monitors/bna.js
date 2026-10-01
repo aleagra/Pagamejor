@@ -154,7 +154,7 @@ async function auditarBNA() {
     const minimo = C.parseMinimo(tyc);
 
     extraidas.push({
-      id: `bna-sn-${C.slugify(p.url || p.name)}`,
+      id: `bna-sn-${C.slugify(p.name)}`,
       bancoBilleteraId: 'banco-nacion',
       bancoBilleteraNombre: 'Banco Nación (BNA)',
       tipoMedioRequerido: tipoMedio,
@@ -172,12 +172,26 @@ async function auditarBNA() {
       condicionUso: 'Pagar en el comercio escaneando el QR con MODO desde la app BNA+ y elegir una tarjeta del BNA.',
       localesAdheridos: titulo,
       aclaraciones: `${pct}% de reintegro ${C.diasATexto(dias).toLowerCase()} en ${titulo}.${montoTope ? ` Tope $${montoTope}${tipoTope === 'por_mes' ? ' por mes' : tipoTope === 'por_semana' ? ' por semana' : ''}.` : ''} ${notas.join(' ')}${motivos.length ? ' REVISAR: ' + motivos.join(' ') : ''}`.trim(),
-      fuenteUrl: p.url ? `${WEB}/${p.url}` : WEB,
+      fuenteUrl: /^https?:\/\//.test(p.url || '') ? p.url : p.url ? `${WEB}/${p.url}` : WEB,
       fuenteId: FUENTE_ID,
       ultimaVerificacion: hoy,
       activo: motivos.length === 0,
-      _meta: { localesMdP, totalLocales, campañas },
+      _meta: { localesMdP, totalLocales, campañas, marcas: marcasPromo.length },
     });
+  }
+
+  // La misma promo se publica como paquete ("Shell, YPF, Axion y 3 más") y por marca ("YPF Combustibles"), con el
+  // mismo %, días y tope: queda el paquete, que ya nombra la marca
+  const marcaClave = s => C.norm(s).split(/\s+/)[0];
+  const repetida = (p, otra) =>
+    otra !== p && otra.rubro === p.rubro && otra.porcentajeDescuento === p.porcentajeDescuento &&
+    otra.diasSemana.join() === p.diasSemana.join() && otra.tipoTope === p.tipoTope && otra.montoTope === p.montoTope &&
+    otra._meta.marcas > Math.max(1, p._meta.marcas) && C.norm(otra.localesAdheridos).includes(marcaClave(p.localesAdheridos));
+  for (const p of [...extraidas]) {
+    if (extraidas.some(otra => repetida(p, otra))) {
+      extraidas.splice(extraidas.indexOf(p), 1);
+      ignoradas.push({ id: p.id, motivo: `Repetida: ya está incluida en un paquete con el mismo %, días y tope` });
+    }
   }
 
   generarReporte({

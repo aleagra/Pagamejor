@@ -85,7 +85,7 @@ async function auditarNaranjaX() {
     }
     const planes = [...(b.nearCurrent || []), ...(b.current || []), ...(b.active || [])];
     for (const plan of planes) {
-      const pct = Number((plan.benefit && plan.benefit.discountPercentage) || 0);
+      let pct = Number((plan.benefit && plan.benefit.discountPercentage) || 0);
       if (!pct) continue; // cuotas / otros beneficios
       const nombre = b.commerceName || com.commerceName;
 
@@ -105,6 +105,17 @@ async function auditarNaranjaX() {
       const legal = d.legal || '';
       const motivos = [];
       const notas = [];
+
+      // A veces la API informa el % como fracción (0.3 = 30%). Solo se corrige si el texto de la promo lo confirma
+      if (pct > 0 && pct < 1) {
+        const corregido = Math.round(pct * 100);
+        if (new RegExp(`\\b${corregido}\\s?%`).test(`${legal} ${JSON.stringify(d)}`)) {
+          notas.push(`La API informó ${pct}; el texto de la promo confirma ${corregido}%.`);
+          pct = corregido;
+        } else {
+          motivos.push(`La API informó ${pct} como porcentaje y el texto no confirma ${corregido}%.`);
+        }
+      }
 
       const dias = (d.days && d.days.weekdaysApplied || []).map(dia7a0).sort();
       if (!dias.length) motivos.push('La API no informa días de aplicación.');
