@@ -37,3 +37,10 @@ next-env.d.ts
 
 # claude
 .claude/
+
+# Salidas y estado local de los monitores (se regeneran)
+scripts/reports/
+scripts/monitors/checklist-state.json
+
+# Prompts operativos locales
+.agents/prompts/commits-por-etapas.md
