@@ -6,6 +6,8 @@ import {
   PromoVariante,
   PromoNivelDescuento,
 } from "./types";
+import { puedePagar, type RecursoPago } from "./formasPago";
+import { compararGrupos, compararPromos, maxPorcentajeGeneral, mejorPorDia } from "./orden";
 
 const NOMBRES_DIAS = [
   "Domingo",
@@ -109,12 +111,16 @@ function buildNivelesDescuento(variantes: PromoVariante[]): PromoNivelDescuento[
  * Cruza los medios de pago de la billetera del usuario con las promociones vigentes.
  *
  * REGLA INQUEBRANTABLE: Jamás retorna una promoción de un banco que el usuario no tenga.
+ *
+ * `recursos`: con qué puede pagar la persona (celular con NFC, app, tarjeta). Las promos que piden algo que no
+ * tiene no se recomiendan; solo se cuentan en `ocultasPorFormaPago`. En null (no respondió) no se oculta nada.
  */
 export function findBestPromos(
   userBankIds: string[],
   rubro: RubroId,
   targetDate: Date = new Date(),
-  allPromos: Promocion[]
+  allPromos: Promocion[],
+  recursos: RecursoPago[] | null = null
 ): RecommendationResult {
   const diaSemana = targetDate.getDay();
   const nombreDia = NOMBRES_DIAS[diaSemana];
@@ -133,6 +139,7 @@ export function findBestPromos(
       alternativeGroups: [],
       upcomingPromos: [],
       totalPromosDisponibles: 0,
+      ocultasPorFormaPago: { cantidad: 0, maxPorcentaje: null },
     };
   }
 
@@ -140,7 +147,7 @@ export function findBestPromos(
 
   // 2. Filtro estricto: Solo promociones activas, dentro de fecha de vigencia, del rubro,
   //    y pertenecientes a bancos en la billetera del usuario.
-  const promosDelUsuarioEnRubro = allPromos.filter((promo) => {
+  const promosEnRubro = allPromos.filter((promo) => {
     if (!promo.activo) return false;
     if (promo.rubro !== rubro) return false;
     if (!userBankSet.has(promo.bancoBilleteraId)) return false;
@@ -148,30 +155,24 @@ export function findBestPromos(
     return true;
   });
 
+  // 2b. Solo las que puede pagar con lo que tiene (NFC, app, tarjeta). Las de hoy que quedan afuera se cuentan
+  //     para avisarle, sin mostrarlas como recomendación.
+  const promosDelUsuarioEnRubro = promosEnRubro.filter((promo) => puedePagar(promo, recursos));
+  const ocultasHoy = promosEnRubro.filter(
+    (promo) => promo.diasSemana.includes(diaSemana) && !puedePagar(promo, recursos)
+  );
+
   // 3. Promociones aplicables para el DÍA DE HOY
   const promosDeHoy = promosDelUsuarioEnRubro.filter((promo) =>
     promo.diasSemana.includes(diaSemana)
   );
 
-  // 4. Ordenamiento determinístico individual:
+  // 4. Ordenamiento determinístico individual (ver orden.ts):
   // - Mayor porcentaje de descuento
-  // - En caso de empate, mayor monto de tope (sin tope se considera tope infinito)
-  // - En caso de empate, menor monto mínimo de compra
-  const sortedHoy = [...promosDeHoy].sort((a, b) => {
-    if (b.porcentajeDescuento !== a.porcentajeDescuento) {
-      return b.porcentajeDescuento - a.porcentajeDescuento;
-    }
-
-    const topeA = a.tipoTope === "sin_tope" ? Infinity : (a.montoTope ?? 0);
-    const topeB = b.tipoTope === "sin_tope" ? Infinity : (b.montoTope ?? 0);
-    if (topeB !== topeA) {
-      return topeB - topeA;
-    }
-
-    const minA = a.minimoCompra ?? 0;
-    const minB = b.minimoCompra ?? 0;
-    return minA - minB;
-  });
+  // - Mayor tope llevado a un mes (sin tope = infinito; $6.000 por semana le gana a $10.000 por mes)
+  // - Menor compra mínima
+  // - Empate real: nombre del medio e id, para que el orden sea siempre el mismo
+  const sortedHoy = [...promosDeHoy].sort(compararPromos);
 
   // 5. Agrupación por entidad/tarjeta (para englobar todas las opciones del mismo banco)
   const promosByBank = new Map<string, Promocion[]>();
@@ -184,7 +185,8 @@ export function findBestPromos(
   const groupedPromos: GroupedBankPromo[] = [];
   for (const [bankId, promosList] of promosByBank.entries()) {
     const bestInBank = promosList[0];
-    const maxPorcentaje = Math.max(...promosList.map((p) => p.porcentajeDescuento));
+    // "Hasta X%" con lo que sirve en cualquier lado; una feria puntual al 40% no infla el número del banco
+    const maxPorcentaje = maxPorcentajeGeneral(promosList);
 
     const variantes: PromoVariante[] = promosList.map((p) => ({
       id: p.id,
@@ -216,40 +218,19 @@ export function findBestPromos(
     });
   }
 
-  // Ordenamos los grupos según la mejor opción que ofrece cada banco
-  groupedPromos.sort((a, b) => {
-    if (b.bestPromo.porcentajeDescuento !== a.bestPromo.porcentajeDescuento) {
-      return b.bestPromo.porcentajeDescuento - a.bestPromo.porcentajeDescuento;
-    }
-    const topeA = a.bestPromo.tipoTope === "sin_tope" ? Infinity : (a.bestPromo.montoTope ?? 0);
-    const topeB = b.bestPromo.tipoTope === "sin_tope" ? Infinity : (b.bestPromo.montoTope ?? 0);
-    if (topeB !== topeA) {
-      return topeB - topeA;
-    }
-    const minA = a.bestPromo.minimoCompra ?? 0;
-    const minB = b.bestPromo.minimoCompra ?? 0;
-    return minA - minB;
-  });
+  // Ordenamos los grupos según la mejor opción que ofrece cada banco; si empatan, el que tiene más opciones
+  // ese día y después el nombre (siempre el mismo orden)
+  groupedPromos.sort(compararGrupos);
 
-  // 6. Si no hay promociones hoy, buscamos qué días sus tarjetas sí tienen beneficios en este rubro
+  // 6. Si no hay promociones hoy, buscamos qué días sus tarjetas sí tienen beneficios en este rubro. La vigencia
+  //    se mira en la fecha de cada día: una promo que vence hoy no se ofrece para el jueves
   const upcomingPromos: UpcomingPromo[] = [];
   if (sortedHoy.length === 0) {
-    for (let offset = 1; offset <= 6; offset++) {
-      const targetDay = (diaSemana + offset) % 7;
-      const promosEseDia = promosDelUsuarioEnRubro.filter((p) =>
-        p.diasSemana.includes(targetDay)
-      );
-      if (promosEseDia.length > 0) {
-        const mejorPromoEseDia = [...promosEseDia].sort(
-          (a, b) => b.porcentajeDescuento - a.porcentajeDescuento
-        )[0];
-
-        upcomingPromos.push({
-          diaSemana: targetDay,
-          diaTexto: NOMBRES_DIAS[targetDay],
-          promo: mejorPromoEseDia,
-        });
-      }
+    const sinMirarVigencia = allPromos.filter(
+      (p) => p.activo && p.rubro === rubro && userBankSet.has(p.bancoBilleteraId) && puedePagar(p, recursos),
+    );
+    for (const { diaSemana: dia, promo } of mejorPorDia(sinMirarVigencia, targetDate)) {
+      upcomingPromos.push({ diaSemana: dia, diaTexto: NOMBRES_DIAS[dia], promo });
     }
   }
 
@@ -269,5 +250,9 @@ export function findBestPromos(
     alternativeGroups,
     upcomingPromos,
     totalPromosDisponibles: sortedHoy.length,
+    ocultasPorFormaPago: {
+      cantidad: ocultasHoy.length,
+      maxPorcentaje: ocultasHoy.length > 0 ? Math.max(...ocultasHoy.map((p) => p.porcentajeDescuento)) : null,
+    },
   };
 }

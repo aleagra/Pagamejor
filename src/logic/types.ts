@@ -63,4 +63,6 @@ export interface RecommendationResult {
   alternativeGroups: GroupedBankPromo[];
   upcomingPromos: UpcomingPromo[];
   totalPromosDisponibles: number;
+  /** Promos de hoy que no se recomiendan porque piden algo que la persona no tiene (ej. NFC). */
+  ocultasPorFormaPago: { cantidad: number; maxPorcentaje: number | null };
 }

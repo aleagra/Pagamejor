@@ -8,6 +8,11 @@ const path = require('path');
 // La calidad de los datos reales la cubre `npm run validate-data`.
 const promos = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/promos.snapshot.json'), 'utf8'));
 
+// Clasificador real de formas de pago (TypeScript sin dependencias: Node 22.18+ lo importa directo)
+const { formasDePago, puedePagar } = require('../../src/logic/formasPago.ts');
+// Orden real del motor (mismo archivo que usa engine.ts)
+const { compararPromos, compararGrupos, topeMensual, maxPorcentajeGeneral, mejorPorDia } = require('../../src/logic/orden.ts');
+
 function getVarianteLabel(promo, allInBank) {
   const isNfc = /nfc|contactless/i.test(promo.medioPagoDetalle + ' ' + promo.condicionUso + ' ' + promo.id);
   const isCuenta = /dinero en cuenta/i.test(promo.medioPagoDetalle + ' ' + promo.condicionUso + ' ' + promo.id);
@@ -37,7 +42,7 @@ function getVarianteLabel(promo, allInBank) {
 }
 
 // Replicamos la función lógica para testear en node directamente
-function testFindBestPromos(userBankIds, rubro, targetDate, allPromos) {
+function testFindBestPromos(userBankIds, rubro, targetDate, allPromos, recursos = null) {
   const diaSemana = targetDate.getDay();
   const fechaIso = targetDate.toISOString().split('T')[0];
 
@@ -46,24 +51,19 @@ function testFindBestPromos(userBankIds, rubro, targetDate, allPromos) {
   }
 
   const userBankSet = new Set(userBankIds);
-  const promosDelUsuario = allPromos.filter(p => 
+  const promosEnRubro = allPromos.filter(p => 
     p.activo && 
     p.rubro === rubro && 
     userBankSet.has(p.bancoBilleteraId) &&
     fechaIso >= p.vigenciaDesde && 
     fechaIso <= p.vigenciaHasta
   );
+  const promosDelUsuario = promosEnRubro.filter(p => puedePagar(p, recursos));
+  const ocultasHoy = promosEnRubro.filter(p => p.diasSemana.includes(diaSemana) && !puedePagar(p, recursos));
 
   const promosDeHoy = promosDelUsuario.filter(p => p.diasSemana.includes(diaSemana));
 
-  promosDeHoy.sort((a, b) => {
-    if (b.porcentajeDescuento !== a.porcentajeDescuento) {
-      return b.porcentajeDescuento - a.porcentajeDescuento;
-    }
-    const topeA = a.tipoTope === 'sin_tope' ? Infinity : (a.montoTope || 0);
-    const topeB = b.tipoTope === 'sin_tope' ? Infinity : (b.montoTope || 0);
-    return topeB - topeA;
-  });
+  promosDeHoy.sort(compararPromos);
 
   // Agrupación por banco/entidad
   const promosByBank = new Map();
@@ -76,7 +76,7 @@ function testFindBestPromos(userBankIds, rubro, targetDate, allPromos) {
   const groupedPromos = [];
   for (const [bankId, promosList] of promosByBank.entries()) {
     const bestInBank = promosList[0];
-    const maxPorcentaje = Math.max(...promosList.map((p) => p.porcentajeDescuento));
+    const maxPorcentaje = maxPorcentajeGeneral(promosList);
 
     const variantes = promosList.map((p) => ({
       id: p.id,
@@ -120,14 +120,7 @@ function testFindBestPromos(userBankIds, rubro, targetDate, allPromos) {
     });
   }
 
-  groupedPromos.sort((a, b) => {
-    if (b.bestPromo.porcentajeDescuento !== a.bestPromo.porcentajeDescuento) {
-      return b.bestPromo.porcentajeDescuento - a.bestPromo.porcentajeDescuento;
-    }
-    const topeA = a.bestPromo.tipoTope === 'sin_tope' ? Infinity : (a.bestPromo.montoTope || 0);
-    const topeB = b.bestPromo.tipoTope === 'sin_tope' ? Infinity : (b.bestPromo.montoTope || 0);
-    return topeB - topeA;
-  });
+  groupedPromos.sort(compararGrupos);
 
   return {
     status: promosDeHoy.length > 0 ? 'ok' : 'no_promos_today',
@@ -135,7 +128,11 @@ function testFindBestPromos(userBankIds, rubro, targetDate, allPromos) {
     alternativePromos: promosDeHoy.slice(1),
     bestGroup: groupedPromos[0] || null,
     alternativeGroups: groupedPromos.slice(1),
-    total: promosDeHoy.length
+    total: promosDeHoy.length,
+    ocultasPorFormaPago: {
+      cantidad: ocultasHoy.length,
+      maxPorcentaje: ocultasHoy.length ? Math.max(...ocultasHoy.map(p => p.porcentajeDescuento)) : null
+    }
   };
 }
 
@@ -308,6 +305,95 @@ console.log('🧪 Iniciando pruebas unitarias de logic-agent...\n');
   assert.strictEqual(res.bestGroup.bestPromo.localesAdheridos, 'Mercado Libre');
   assert.ok(res.bestGroup.variantes.some(v => v.localesAdheridos === 'Changomas'), 'Debe incluir Changomas 15%');
   console.log('✔ Test 13 superado: Mercado Pago agrupa beneficios de la app con 35% en Mercado Libre y 15% en Changomas.');
+}
+
+// Test 14: Clasificador de formas de pago (lee medioPagoDetalle)
+{
+  assert.deepStrictEqual(formasDePago('Visa Crédito vía NFC en app Cuenta DNI (Android)'), ['NFC']);
+  assert.deepStrictEqual(formasDePago('QR o Clave DNI'), ['QR', 'Clave DNI']);
+  assert.deepStrictEqual(formasDePago('Tarjetas de crédito y débito vía QR MODO'), ['QR MODO']);
+  assert.deepStrictEqual(formasDePago('Dinero en cuenta o NFC en app Cuenta DNI'), ['QR', 'NFC']);
+  assert.deepStrictEqual(formasDePago('Visa Crédito'), ['Tarjeta']);
+  // Sin responder (null) no se oculta nada; con una de sus formas alcanza
+  assert.strictEqual(puedePagar({ medioPagoDetalle: 'Visa Débito vía NFC (Android)' }, null), true);
+  assert.strictEqual(puedePagar({ medioPagoDetalle: 'Visa Débito vía NFC (Android)' }, ['app', 'tarjeta']), false);
+  assert.strictEqual(puedePagar({ medioPagoDetalle: 'Dinero en cuenta o NFC en app Cuenta DNI' }, ['app']), true);
+  assert.strictEqual(puedePagar({ medioPagoDetalle: 'Compras online en Mercado Libre' }, []), true);
+  console.log('✔ Test 14 superado: El clasificador detecta NFC, QR, QR MODO, Clave DNI y tarjeta, y con una forma alcanza.');
+}
+
+// Test 15: Sin NFC, el 30% de Mostaza (solo Android con NFC) no se recomienda y queda contado como oculto
+{
+  const jueves = new Date('2026-10-01T12:00:00Z'); // Jueves
+  const conTodo = testFindBestPromos(['cuenta-dni'], 'gastronomia', jueves, promos);
+  assert.strictEqual(conTodo.bestPromo.id, 'cdni-gastro-mostaza-nfc', 'Sin responder, la mejor es Mostaza 30% NFC');
+  assert.strictEqual(conTodo.ocultasPorFormaPago.cantidad, 0);
+
+  const sinNfc = testFindBestPromos(['cuenta-dni'], 'gastronomia', jueves, promos, ['app', 'tarjeta']);
+  const ids = [sinNfc.bestPromo, ...sinNfc.alternativePromos].filter(Boolean).map(p => p.id);
+  assert.ok(!ids.includes('cdni-gastro-mostaza-nfc'), 'Sin NFC no debe recomendarse Mostaza NFC');
+  assert.ok(ids.every(id => puedePagar(promos.find(p => p.id === id), ['app', 'tarjeta'])));
+  assert.ok(sinNfc.ocultasPorFormaPago.cantidad >= 1);
+  assert.strictEqual(sinNfc.ocultasPorFormaPago.maxPorcentaje, 30);
+  console.log('✔ Test 15 superado: Sin NFC no se recomiendan promos solo NFC y se informa cuántas quedaron afuera (hasta 30%).');
+}
+
+// Test 16: El filtro de forma de pago nunca suma bancos fuera de la billetera
+{
+  const jueves = new Date('2026-10-01T12:00:00Z');
+  const res = testFindBestPromos(['cuenta-dni'], 'supermercado', jueves, promos, ['app']);
+  const todas = [res.bestPromo, ...res.alternativePromos].filter(Boolean);
+  assert.ok(todas.every(p => p.bancoBilleteraId === 'cuenta-dni'));
+  assert.ok(todas.some(p => p.id === 'cdni-super-changomas-jue'), 'Changomás también se paga con la app (dinero en cuenta)');
+  assert.ok(!todas.some(p => p.id === 'cdni-super-coto-nfc'), 'COTO solo NFC no debe aparecer');
+  console.log('✔ Test 16 superado: Con solo la app se mantienen las promos QR/cuenta y se ocultan las solo NFC, sin salir de la billetera.');
+}
+
+// Test 17: Los topes se comparan llevados a un mes ($6.000 por semana le gana a $10.000 por mes)
+{
+  assert.strictEqual(topeMensual({ tipoTope: 'por_semana', montoTope: 6000 }), 24000);
+  assert.strictEqual(topeMensual({ tipoTope: 'por_dia', montoTope: 5000 }), 150000);
+  assert.strictEqual(topeMensual({ tipoTope: 'sin_tope', montoTope: null }), Infinity);
+  const base = { bancoBilleteraNombre: 'X', porcentajeDescuento: 15, minimoCompra: null };
+  const semanal = { ...base, id: 'a', tipoTope: 'por_semana', montoTope: 6000 };
+  const mensual = { ...base, id: 'b', tipoTope: 'por_mes', montoTope: 10000 };
+  assert.ok(compararPromos(semanal, mensual) < 0, '$6.000 por semana debe ir antes que $10.000 por mes');
+  console.log('✔ Test 17 superado: Los topes de distinto período se comparan en su equivalente mensual.');
+}
+
+// Test 18: Un empate real (mismo %, tope y mínimo) se ordena siempre igual, sin importar el orden de carga
+{
+  const promo = (id, nombre) => ({ id, bancoBilleteraNombre: nombre, porcentajeDescuento: 30, tipoTope: 'por_semana', montoTope: 12000, minimoCompra: null });
+  const grupo = (nombre, opciones) => ({ bancoBilleteraNombre: nombre, totalOpciones: opciones, bestPromo: promo(nombre, nombre) });
+  const a = [grupo('MODO', 3), grupo('Banco Galicia', 3), grupo('Banco Supervielle', 2)];
+  const b = [a[2], a[0], a[1]];
+  const ordenA = [...a].sort(compararGrupos).map(g => g.bancoBilleteraNombre);
+  const ordenB = [...b].sort(compararGrupos).map(g => g.bancoBilleteraNombre);
+  assert.deepStrictEqual(ordenA, ordenB, 'El orden no debe depender del orden de carga');
+  assert.deepStrictEqual(ordenA, ['Banco Galicia', 'MODO', 'Banco Supervielle'], 'Empate: más opciones primero y después el nombre');
+  console.log('✔ Test 18 superado: Los empates se desempatan por cantidad de opciones y nombre, siempre en el mismo orden.');
+}
+
+// Test 19: Una promo de alcance limitado (feria puntual al 40%) no le gana a una general (20% en cualquier almacén)
+{
+  const base = { bancoBilleteraNombre: 'Cuenta DNI', tipoTope: 'por_semana', montoTope: 6000, minimoCompra: null };
+  const feria = { ...base, id: 'feria', porcentajeDescuento: 40, alcanceLimitado: true };
+  const almacen = { ...base, id: 'almacen', porcentajeDescuento: 20 };
+  assert.deepStrictEqual([feria, almacen].sort(compararPromos).map(p => p.id), ['almacen', 'feria']);
+  assert.strictEqual(maxPorcentajeGeneral([feria, almacen]), 20, 'El "hasta X%" usa las promos generales');
+  assert.strictEqual(maxPorcentajeGeneral([feria]), 40, 'Si solo hay de alcance limitado, cuenta esa');
+  console.log('✔ Test 19 superado: Las promos de alcance limitado van después de las generales y no inflan el "hasta X%".');
+}
+
+// Test 20: "Otros días" mira la vigencia en la fecha de cada día (una promo que vence hoy no aparece el jueves)
+{
+  const promo = (id, hasta) => ({ id, bancoBilleteraNombre: 'MODO', porcentajeDescuento: 20, tipoTope: 'por_mes', montoTope: 5000, minimoCompra: null, diasSemana: [4], vigenciaDesde: '2026-09-01', vigenciaHasta: hasta });
+  const miercoles = new Date(2026, 8, 30, 12); // 30/9/2026, hora local
+  assert.deepStrictEqual(mejorPorDia([promo('vence-hoy', '2026-09-30')], miercoles), [], 'Vence el 30/9: no puede ofrecerse para el jueves 1/10');
+  const r = mejorPorDia([promo('sigue', '2026-10-31')], miercoles);
+  assert.strictEqual(r.length, 1);
+  assert.strictEqual(r[0].diaSemana, 4);
+  console.log('✔ Test 20 superado: Los próximos días con descuento respetan la vigencia de cada fecha.');
 }
 
 console.log('\n🎉 Todas las pruebas unitarias de logic-agent pasaron con éxito.');
