@@ -18,13 +18,13 @@
     "nombre": "Carnicerías",
     "icono": "🥩",
     "descripcion": "Carnicerías, granjas y pescaderías de barrio",
-    "esDestacado": true
+    "esDestacado": false
   },
   {
     "id": "farmacia",
     "nombre": "Farmacias",
     "icono": "💊",
-    "descripcion": "Medicamentos, farmacias y perfumerías",
+    "descripcion": "Farmacias, perfumerías, cosmética y ópticas",
     "esDestacado": true
   },
   {
@@ -84,10 +84,17 @@
     "esDestacado": false
   },
   {
+    "id": "transporte",
+    "nombre": "Transporte",
+    "icono": "🚌",
+    "descripcion": "Colectivos, viajes en auto y estacionamiento",
+    "esDestacado": false
+  },
+  {
     "id": "otros",
     "nombre": "Otros Comercios",
     "icono": "🛍️",
-    "descripcion": "Comercios generales de cercanía y ferias",
+    "descripcion": "Gimnasios, universidades y comercios varios",
     "esDestacado": false
   }
 ]

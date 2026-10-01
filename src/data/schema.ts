@@ -11,6 +11,7 @@ export type RubroId =
   | "entretenimiento"
   | "mayorista"
   | "tecnologia"
+  | "transporte"
   | "otros";
 
 export type TipoTope =
@@ -79,6 +80,10 @@ export interface Promocion {
 
   // Rubro
   rubro: RubroId;
+
+  // Solo en lugares puntuales (ferias identificadas, universidades, localidades): se muestra, pero nunca
+  // queda como "la mejor opción" por encima de una promo que sirve en cualquier lado
+  alcanceLimitado?: boolean;
 
   // Días válidos (0 = Domingo, 1 = Lunes, 2 = Martes, 3 = Miércoles, 4 = Jueves, 5 = Viernes, 6 = Sábado)
   diasSemana: number[];
