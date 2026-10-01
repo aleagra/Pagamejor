@@ -25,6 +25,16 @@ const PROVINCIA = 'BUENOS AIRES';
 const LOCALIDAD = 'MAR DEL PLATA';
 const PAUSA_MS = 120;
 
+/**
+ * Rubro por marca cuando la categoría de Galicia no alcanza: farmacias, perfumerías y ópticas van a 'farmacia';
+ * colectivos, SUBE y estacionamientos a 'transporte'. Si no, se usa la categoría (y 'otros' si no está listada).
+ */
+function rubroGalicia(marca, idCategoria) {
+  if (/farmac|perfumer|optic|óptic|simplicity|juleriaque|get the look/i.test(marca)) return 'farmacia';
+  if (/colectivo|\bsube\b|transporte|estacionamiento|cabify|uber/i.test(marca)) return 'transporte';
+  return RUBRO[idCategoria] || 'otros';
+}
+
 /** IdCategoria de Galicia -> rubro de PagaMejor (las no listadas quedan en 'otros'). */
 const RUBRO = { 8: 'supermercado', 1: 'gastronomia', 7: 'indumentaria', 4: 'hogar', 121: 'mascotas', 122: 'libreria', 11: 'libreria', 6: 'entretenimiento', 9: 'tecnologia' };
 const PERIODO = { mensual: 'por_mes', semanal: 'por_semana', diario: 'por_dia', diaria: 'por_dia' };
@@ -133,7 +143,7 @@ async function auditarGalicia() {
       bancoBilleteraNombre: 'Banco Galicia',
       tipoMedioRequerido: tieneCred && tieneDeb ? 'cualquiera' : tieneCred ? 'credito' : 'debito',
       medioPagoDetalle: medioDetalle,
-      rubro: /farmac|perfumer|simplicity|juleriaque|get the look/i.test(marca) ? 'farmacia' : (RUBRO[item._cat.id] || 'otros'),
+      rubro: rubroGalicia(marca, item._cat.id),
       diasSemana: dias || [],
       diasTexto: C.diasATexto(dias),
       vigenciaDesde: desde || hoy,

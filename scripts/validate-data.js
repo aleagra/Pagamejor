@@ -21,6 +21,7 @@ console.log(`Bancos cargados: ${bancos.length}`);
 console.log(`Rubros cargados: ${rubros.length}`);
 console.log(`Promociones a validar: ${promos.length}\n`);
 
+const sinComercio = [];
 promos.forEach((promo, idx) => {
   const prefix = `[Promo #${idx + 1} ID: "${promo.id}"]`;
 
@@ -86,6 +87,16 @@ promos.forEach((promo, idx) => {
     errors.push(`${prefix} activo:false exige una nota en aclaraciones explicando el motivo.`);
   }
 
+  // 9b. alcanceLimitado: solo booleano (promos de lugares puntuales, que no deben quedar primeras)
+  if (promo.alcanceLimitado !== undefined && typeof promo.alcanceLimitado !== 'boolean') {
+    errors.push(`${prefix} alcanceLimitado debe ser true o false.`);
+  }
+
+  // 9c. El comercio tiene que nombrar el lugar, no ser un texto publicitario ("Todos los días pagando con…")
+  if (promo.activo && /^(todos los|todas las|disfrut|pag[aá]\b|pagando|v[aá]lid|con tu|los (lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bados|domingos))/i.test((promo.localesAdheridos || '').trim())) {
+    sinComercio.push(promo.id);
+  }
+
   // 10. Niveles de cuenta/cliente (Patagonia, Supervielle)
   if (promo.niveles !== undefined) {
     if (!Array.isArray(promo.niveles) || promo.niveles.length < 2) {
@@ -112,11 +123,14 @@ promos.forEach((promo, idx) => {
 });
 
 // Advertencias no bloqueantes: promos activas ya vencidas o próximas a vencer
-const hoy = new Date().toISOString().split('T')[0];
-const en7 = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+// Fecha local (Argentina), no UTC: a la noche toISOString() ya da el día siguiente y marcaba vencidas antes de tiempo
+const fechaLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const hoy = fechaLocal(new Date());
+const en7 = fechaLocal(new Date(Date.now() + 7 * 86400000));
 const vencidasActivas = promos.filter(p => p.activo && p.vigenciaHasta < hoy);
 const porVencer = promos.filter(p => p.activo && p.vigenciaHasta >= hoy && p.vigenciaHasta <= en7);
 if (vencidasActivas.length) console.warn(`⚠️  ${vencidasActivas.length} promos activas con vigencia vencida (el engine las oculta): ${vencidasActivas.map(p => p.id).join(', ')}`);
+if (sinComercio.length) console.warn(`⚠️  ${sinComercio.length} promos activas sin el nombre del comercio en localesAdheridos (texto publicitario): ${sinComercio.join(', ')}`);
 if (porVencer.length) console.warn(`⚠️  ${porVencer.length} promos activas vencen en los próximos 7 días.`);
 
 if (errors.length > 0) {

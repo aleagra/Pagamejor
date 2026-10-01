@@ -64,12 +64,39 @@
   },
   {
     "id": "mercadopago",
-    "nombre": "Mercado Pago (pública)",
-    "url": "https://promociones.mercadopago.com.ar/",
-    "metodo": "Estática",
+    "nombre": "Mercado Pago (páginas de comercios)",
+    "url": "https://www.carrefour.com.ar/descuentos-bancarios · https://www.masonline.com.ar/promociones-bancarias",
+    "metodo": "Playwright sobre las páginas oficiales de descuentos bancarios de Carrefour y ChangoMás",
     "script": "scripts/monitors/mercadopago.js",
     "manual": false,
-    "notas": "Vigencia SIEMPRE del 'Legales' de cada card. Al 2026-09-29 todas las cards estaban vencidas (mayo) o eran solo cuotas."
+    "notas": "Mercado Pago no publica sus beneficios en locales en ninguna web pública (solo en la app). Se toman los que publican los comercios con locales en MdP; solo las tarjetas que nombran a Mercado Pago o cuyas bases dicen que se paga con MP (no las de otros bancos que lo excluyen). promociones.mercadopago.com.ar quedó abandonada (Hot Sale de mayo) y dejó de usarse."
+  },
+  {
+    "id": "bna",
+    "nombre": "Banco Nación (Semana Nación)",
+    "url": "https://semananacion.com.ar/semananacion",
+    "metodo": "API JSON pública de la web (Digiventures activx): promociones + comercios adheridos con domicilio",
+    "script": "scripts/monitors/bna.js",
+    "manual": false,
+    "notas": "Presencia en MdP con la lista de comercios de cada promo (domicilio con \"Mar del Plata\"/\"General Pueyrredón\"/\"Batán\") o cadena nacional. El campo status de la API no sirve: vigencia por fechas. Tope SIEMPRE del texto legal; si el legal no dice período, activo:false. Las promos con modoSlug las cubre MODO."
+  },
+  {
+    "id": "brubank",
+    "nombre": "Brubank",
+    "url": "https://www.brubank.com/beneficios",
+    "metodo": "Estática (listado) + bases de cada promo en help.brubank.com",
+    "script": "scripts/monitors/brubank.js",
+    "manual": false,
+    "notas": "Bases con plan, días, vigencia, % y tope por compra, y Anexo I de locales (se busca Mar del Plata). Las de Plan Plus/Ultra (pagos) quedan activo:false hasta que PagaMejor pregunte el plan. Algunas exigen tocar \"Jugá y Participá\" en la app: va en condicionUso."
+  },
+  {
+    "id": "corrientes",
+    "nombre": "Banco de Corrientes",
+    "url": "https://promosdelbanco.com",
+    "metodo": "Estática (HTML público; la API de WordPress está restringida)",
+    "script": "scripts/monitors/corrientes.js",
+    "manual": false,
+    "notas": "Casi todo es de Corrientes y Misiones: solo se cargan las páginas cuya tabla de comercios incluye Mar del Plata. Las bases dicen \"vigentes\" sin fecha de fin: quedan activo:false para verificar. Sus promos vía MODO las cubre MODO."
   },
   {
     "id": "mercadopago-app",
@@ -78,7 +105,7 @@
     "metodo": "MANUAL por capturas (sin API ni scraping legítimo). No usar el asistente 'Mago'.",
     "script": null,
     "manual": true,
-    "recordatorio": "Entrá a la app de Mercado Pago > 'Explorá tus beneficios' y mandá capturas nuevas HOY (comercio, %, días, tope, mínimo, vigencia). Las 15 promos mp-* cargadas tienen vigencia 2026-12-31 sin verificar.",
+    "recordatorio": "Con el celular EN MAR DEL PLATA (la app muestra beneficios según la ubicación): app de Mercado Pago > Beneficios. Capturá cada beneficio y su \"Ver términos\" (comercio, %, días, tope, mínimo, vigencia). Las capturas anteriores se tomaron desde otra ciudad: 6 promos quedaron pausadas y 9 pendientes de verificar.",
     "notas": "Las promos mp-* tienen fuenteId 'mercadopago-app'."
   },
   {
@@ -89,6 +116,6 @@
     "script": null,
     "manual": true,
     "recordatorio": "Personal Pay (personal-pay-*) y Banco Provincia (bapro-indumentaria-vie-sab) no tienen extractor: si siguen siendo de interés, mandá capturas nuevas ese día; sus vigencias (2026-12-31) están sin verificar.",
-    "notas": "También aplica a cualquier banco fuera de las 8 fuentes (BNA, Macro, ICBC, Santander, BBVA...): sus promos vía MODO quedaron inactivas hasta verificarlas."
+    "notas": "BBVA bloquea el acceso automático a su web (403): sus promos llegan por MODO y, el resto, por captura. También aplica a bancos sin extractor propio (Santander, Macro, ICBC...) cuyas promos fuera de MODO no se ven."
   }
 ]

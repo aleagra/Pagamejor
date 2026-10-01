@@ -37,7 +37,7 @@ const MEDIO = {
  */
 const CARDS = {
   beneficio_librerias: { rubro: 'libreria', locales: 'Librerías de texto adheridas', ids: { default: 'cdni-librerias-lun-mar' } },
-  comerciosdebarrio: { rubro: 'otros', locales: 'Comercios de cercanía, almacenes y tiendas de barrio (excluye garrafas, pet shops, veterinarias y gastronomía)', ids: { default: 'cdni-comercios-cercania' } },
+  comerciosdebarrio: { rubro: 'supermercado', locales: 'Comercios de cercanía, almacenes y tiendas de barrio (excluye garrafas, pet shops, veterinarias y gastronomía)', ids: { default: 'cdni-comercios-cercania' } },
   supermercados_martesymiercoles: { rubro: 'supermercado', locales: 'Supermercados adheridos participantes', ids: { default: 'cdni-super-cadenas-mar-mie' } },
   carrefour: { rubro: 'supermercado', locales: 'Carrefour (Hiper, Market, Express, Maxi; no incluye Digital)', ids: { default: 'cdni-super-carrefour-mie' } },
   laanonima: { rubro: 'supermercado', locales: 'Supermercados La Anónima', ids: { default: 'cdni-super-laanonima-mie' } },
@@ -51,7 +51,7 @@ const CARDS = {
   especialypf: { rubro: 'gastronomia', locales: 'Gastronomía de tiendas YPF Full', ids: { default: 'cdni-gastro-finde' } },
   garrafas: { rubro: 'hogar', locales: 'Distribuidoras y puntos de venta o entrega de garrafas', ids: { default: 'cdni-hogar-garrafas' } },
   beneficiouniversidades: { rubro: 'otros', locales: 'Buffets, fotocopiadoras y comercios en universidades', ids: { default: 'cdni-universidades' } },
-  feriasymercados: { rubro: 'otros', locales: 'Ferias y Mercados Bonaerenses identificados', ids: { default: 'cdni-ferias-mercados' } },
+  feriasymercados: { rubro: 'supermercado', locales: 'Ferias y Mercados Bonaerenses identificados', ids: { default: 'cdni-ferias-mercados' } },
   cooperativaobrera: {
     rubro: 'supermercado', locales: 'Cooperativa Obrera (solo sucursales de Lobos y La Plata)', soloClaveDNI: true,
     inactiva: 'Exclusiva de las localidades de Lobos y La Plata; no aplica en Mar del Plata.',

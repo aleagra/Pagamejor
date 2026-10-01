@@ -217,6 +217,13 @@ function parseTope(texto) {
     else if (/por mes|mensual/.test(contexto)) tipoTope = 'por_mes';
     else if (/por (?:dia|lunes|martes|miercoles|jueves|viernes|sabado|domingo)|diario/.test(contexto)) tipoTope = 'por_dia';
     else if (/por (?:compra|viaje|operacion|transaccion|ticket|consumo)/.test(contexto)) tipoTope = 'por_compra';
+    // El período también puede ir antes del monto: "tope de descuento semanal: $15.000"
+    if (!tipoTope) {
+      const antes = t.slice(Math.max(0, m.index), m.index + m[0].indexOf('$'));
+      if (/semanal|por semana/.test(antes)) tipoTope = 'por_semana';
+      else if (/mensual|por mes/.test(antes)) tipoTope = 'por_mes';
+      else if (/diario|por dia/.test(antes)) tipoTope = 'por_dia';
+    }
     return { tipoTope, montoTope: monto };
   }
   if (/sin tope/.test(t)) return { tipoTope: 'sin_tope', montoTope: null };

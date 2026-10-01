@@ -4,7 +4,11 @@
  *
  * MODO renderiza con JS, pero la web consume una API JSON pública que se consulta directo con fetch
  * (más estable y rápido que Playwright):
- *   1. /promos/api/rewards/slots?slots=<slot>          -> listado de cards (estado, promo_id, flujo)
+ *   0. /promos/api/rewards/slots-container/<id>        -> secciones (slots) que publica la web hoy
+ *      /promos/api/rewards/banks                       -> bancos con su id, para filtrar por banco
+ *   1. /promos/api/rewards/slots?slots=<slot>&banks=<id> -> listado de cards (estado, promo_id, flujo).
+ *      Sin filtro cada sección muestra una parte; filtrando por banco aparecen promos que no salen sin filtro,
+ *      así que se recorren todas las secciones sin filtro y filtradas por cada banco de la billetera.
  *   2. promoshub.../map/stores?application_id&zone=    -> locales adheridos en Mar del Plata
  *   3. /promos/api/rewards/v2/benefit/<slug>           -> % , tope + período, mínimo, cronograma, T&C
  *   4. /promos/api/rewards/v2/benefit/<slug>/banks     -> bancos habilitados
@@ -23,11 +27,15 @@ const API = 'https://www.modo.com.ar/promos/api/rewards';
 const MAP_API = 'https://promoshub.modo.com.ar/promos/api/map/stores';
 const ZONA_MDP = '-57.75,-38.15,-57.45,-37.90'; // oeste,sur,este,norte
 const ZONA_PAIS = '-73,-55,-53,-22';
-const SLOTS = [
-  'web-modo-hub-supermercados',
+const CONTENEDOR_SLOTS = 'web-modo-container-hub-promos-1';
+/** Respaldo si la API de secciones no responde (las 6 publicadas al 30/09/2026). */
+const SLOTS_RESPALDO = [
+  'web-modo-hub-carrousel_principal',
   'web-modo-hub-destacadas',
+  'web-modo-hub-supermercados',
   'web-modo-hub-exclusivas-online',
   'web-modo-hub-promos-financiacion',
+  'web-modo-hub-mas-promos',
 ];
 
 const BANCOS = {
@@ -38,8 +46,20 @@ const BANCOS = {
   ciudad: ['banco-ciudad', 'Banco Ciudad'], supervielle: ['supervielle', 'Banco Supervielle'],
   hipotecario: ['banco-hipotecario', 'Banco Hipotecario'],
   yoy: ['yoy', 'YOY'], // YOY (cuenta digital de ICBC) es un medio propio en la billetera
-  buepp: ['banco-ciudad', 'Banco Ciudad'], // Buepp es la billetera de Banco Ciudad corrientes: ['banco-corrientes', 'Banco de Corrientes'],
+  buepp: ['banco-ciudad', 'Banco Ciudad'], // Buepp es la billetera de Banco Ciudad
+  corrientes: ['banco-corrientes', 'Banco de Corrientes'],
+  brubank: ['brubank', 'Brubank'],
 };
+
+/** Nombre del banco en /rewards/banks (normalizado) -> clave de BANCOS, para listar las promos de cada uno. */
+const NOMBRE_MODO = {
+  'banco nacion': 'nacion', galicia: 'galicia', bbva: 'bbva', santander: 'santander', macro: 'macro', icbc: 'icbc',
+  credicoop: 'credicoop', ciudad: 'ciudad', supervielle: 'supervielle', hipotecario: 'hipotecario', comafi: 'comafi',
+  yoy: 'yoy', buepp: 'buepp', 'banco corrientes': 'corrientes', brubank: 'brubank',
+};
+/** Nombra otra provincia o región como alcance de la promo ("supers de cordoba", "comercios de jujuy"). */
+const REGIONAL = /\b(supers?|supermercados|comercios|locales|farmacias|estaciones)( adheridos)? (de|del) (santa fe|cordoba|jujuy|salta|tucuman|mendoza|san juan|san luis|la rioja|catamarca|santiago del estero|chaco|formosa|misiones|entre rios|neuquen|rio negro|chubut|santa cruz|tierra del fuego|la pampa|corrientes|rosario|caba|interior)\b|\bsupers federal\b/;
+
 const DIA_EN = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
 const RESET = { day: 'por_dia', week: 'por_semana', month: 'por_mes' };
 
@@ -58,16 +78,46 @@ async function enPool(items, n, fn) {
   return out;
 }
 
+async function listarSlots() {
+  try {
+    const j = await getJson(`${API}/slots-container/${CONTENEDOR_SLOTS}?source=web_modo`);
+    const ids = (j.slots || []).filter(x => x.status === 'active').map(x => x.id);
+    if (ids.length) return ids;
+  } catch (e) {
+    console.warn(`[monitor-agent] No se pudieron leer las secciones de MODO (${e.message}); se usan las conocidas.`);
+  }
+  return SLOTS_RESPALDO;
+}
+
+/** Ids de MODO de los bancos que cubre PagaMejor. Si un banco no aparece, se avisa (pudo cambiar de nombre). */
+async function listarBancosModo() {
+  const j = await getJson(`${API}/banks?source=app_modo`);
+  const lista = Array.isArray(j) ? j : j.data || j.banks || [];
+  const ids = [];
+  for (const b of lista) {
+    const clave = NOMBRE_MODO[C.norm(b.name || '')];
+    if (clave) ids.push({ clave, id: b.id });
+  }
+  const faltan = Object.values(NOMBRE_MODO).filter(k => !ids.some(x => x.clave === k));
+  if (faltan.length) console.warn(`[monitor-agent] MODO no lista estos bancos (revisar nombres): ${faltan.join(', ')}`);
+  return ids;
+}
+
 async function listarCards() {
   const cards = new Map();
-  for (const slot of SLOTS) {
-    for (let page = 1; page < 30; page++) {
-      const j = await getJson(`${API}/slots?slots=${slot}&banks=&user_bank_ids=&limit=50&page=${page}&fcalcstatus=running%2Cfinished_for_product%2Cnext_for_product&slot_info=true`);
+  const slots = await listarSlots();
+  const bancos = await listarBancosModo();
+  // Cada sección sin filtro y filtrada por cada banco: [slot, idBanco|'']
+  const consultas = slots.flatMap(slot => [[slot, ''], ...bancos.map(b => [slot, b.id])]);
+  await enPool(consultas, 6, async ([slot, banco]) => {
+    for (let page = 1; page < 40; page++) {
+      const j = await getJson(`${API}/slots?slots=${slot}&banks=${banco}&user_bank_ids=${banco}&limit=50&page=${page}&fcalcstatus=running%2Cfinished_for_product%2Cnext_for_product&slot_info=true`);
       const cs = (j.data && j.data.cards) || [];
       cs.forEach(c => { if (!cards.has(c.slug)) cards.set(c.slug, { ...c, _slot: slot }); });
       if (cs.length < 50) break;
     }
-  }
+  });
+  console.log(`[monitor-agent] ${slots.length} secciones x ${bancos.length + 1} filtros (sin filtro + por banco).`);
   return [...cards.values()];
 }
 
@@ -80,9 +130,11 @@ function rubroDe(card, texto, existente) {
   if (existente) return { rubro: existente.rubro, inferido: false };
   const s = C.norm(`${card.title} ${card.search_tags} ${texto}`);
   const reglas = [
-    ['supermercado', /supermercad|coto|jumbo|disco|vea|changomas|toledo|carrefour|dia\b|cooperativa obrera|makro/],
+    ['supermercado', /supermercad|coto|jumbo|disco|vea|changomas|toledo|carrefour|dia\b|cooperativa obrera|makro|la anonima|almacen/],
     ['combustible', /combustible|ypf|shell|axion|puma|nafta/],
-    ['farmacia', /farmac|perfumer/], ['gastronomia', /restauran|parrilla|heladeria|gastronom|cafe|burger/],
+    ['farmacia', /farmac|perfumer|optica|juleriaque|get the look|simplicity/],
+    ['gastronomia', /restauran|parrilla|helad|gastronom|cafe|burger|mostaza|havanna/],
+    ['transporte', /transporte|colectivo|\bsube\b|subte|estacionamiento/],
     ['indumentaria', /indumentaria|ropa|calzado|deport/], ['mascotas', /veterinar|pet ?shop|mascota/],
     ['libreria', /libreri|jugueter/], ['hogar', /hogar|ferreter|corralon|sodimac/],
   ];
@@ -140,7 +192,11 @@ async function auditarMODO() {
     const offer = (b.offers || [])[0];
     // Promos limitadas a un segmento de clientes del banco (no aplican a cualquier titular)
     const segmento = /target|payroll|sueldo|selecta|platinum|premium|unico|black|\bsupp\b|jubilad|\bps\b|\bidt\b|\brm\b|\bcg\b/i.exec(`${card.slug} ${card.title || ''}`.replace(/-/g, ' '));
+    // (las search_tags no sirven para esto: MODO pone etiquetas "SEG_…" también en promos generales)
     if (segmento) { ignoradas.push({ slug: card.slug, motivo: `Segmento específico de clientes ("${segmento[0]}"): no aplica a cualquier titular` }); return; }
+    // Promos de otra provincia ("Supermercados de Santa Fe"): el mapa de MODO a veces ubica mal algún local
+    const regional = REGIONAL.exec(C.norm(`${card.title || ''} ${(card.slug || '').replace(/-/g, ' ')}`));
+    if (regional) { ignoradas.push({ slug: card.slug, motivo: `Promo regional ("${regional[0]}"): no aplica en Mar del Plata` }); return; }
     const cb = offer && offer.outcomes && offer.outcomes.cashback;
     if (!cb || cb.amount_type !== 'percent' || !cb.amount) {
       ignoradas.push({ slug: card.slug, motivo: 'Sin reintegro porcentual (financiación u otro beneficio)' });
@@ -164,6 +220,7 @@ async function auditarMODO() {
     const desde = (sch.start_date || '').slice(0, 10);
     const hasta = (sch.stop_date || '').slice(0, 10);
     if (!desde || !hasta) motivos.push('Sin fechas de vigencia en el cronograma.');
+    if (hasta && hasta < hoy) { ignoradas.push({ slug: card.slug, motivo: `Vencida el ${hasta}` }); return; }
     if (sch.daily_start_time && !/^00:00/.test(sch.daily_start_time) || sch.daily_stop_time && !/^23:5/.test(sch.daily_stop_time)) {
       notas.push(`Horario acotado: ${sch.daily_start_time} a ${sch.daily_stop_time}.`);
     }
@@ -215,7 +272,16 @@ async function auditarMODO() {
     const idBase = `modo-${card.slug}`;
     const existente = porId.get(idBase) || porId.get(`${idBase}${destinos[0].sufijo}`);
     const { rubro, inferido } = rubroDe(card, b.description, existente);
-    const comercio = (b.description || b.name || card.title || '').replace(/\s+/g, ' ').trim();
+    // La descripción a veces es publicidad que no nombra el comercio ("Todos los días pagando con tu tarjeta…"):
+    // en ese caso se usa el título de la card y se avisa para que el data-agent lo confirme
+    const limpio = (t) => (t || '').replace(/\s+/g, ' ').trim();
+    const esPublicidad = (t) => /^(todos los|todas las|disfrut|pag[aá]\b|pagando|v[aá]lid|con tu|seg_|los (lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bados|domingos))|^aprovech[aá] (el )?\d+% de reintegro y\b/i.test(t);
+    let comercio = limpio(b.description || b.name || card.title);
+    if (esPublicidad(comercio)) {
+      const alternativa = [b.name, card.title].map(limpio).find((t) => t && !esPublicidad(t));
+      notas.push(`La descripción no nombra el comercio ("${comercio.slice(0, 60)}"): ${alternativa ? `se usó "${alternativa}"` : 'completar a mano'} (ver ${card.slug}).`);
+      if (alternativa) comercio = alternativa;
+    }
     const medio = `Tarjetas ${tipoMedio === 'credito' ? 'de crédito' : tipoMedio === 'debito' ? 'de débito' : 'de crédito o débito'} ${online ? 'en local o tienda online' : 'vía QR en local'} con app MODO o app bancaria adherida`;
     if (nfc) notas.push('Admite pago NFC (contactless) desde la billetera.');
     if (inferido) notas.push('Rubro inferido automáticamente: confirmar.');

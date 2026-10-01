@@ -22,7 +22,7 @@ const LISTADO = `${BASE}/promociones`;
 const ORDEN_LETRAS = [1, 2, 3, 4, 5, 6, 0]; // L M M J V S D
 
 /** Rubro por promo (explícito). Sin entrada => 'otros'. */
-const RUBRO = { rappi: 'gastronomia' };
+const RUBRO = { rappi: 'gastronomia', colectivos: 'transporte', seekerparking: 'transporte' };
 /** Promos que, aun sin las palabras clave, son condicionadas (motivo). */
 const CONDICIONADAS = {
   cabify100: 'Condicionada: el cupón de 100% se obtiene tras completar un viaje entre 7:00 y 8:59 (L a V) y solo sirve para el segundo viaje del mismo día.',
