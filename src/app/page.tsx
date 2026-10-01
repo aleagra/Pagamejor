@@ -43,7 +43,7 @@ function fechaCorta(iso: string): string {
   return `${d}/${m}`;
 }
 
-function DatoPie({ icono: Icono, titulo, children }: { icono: Icon; titulo: string; children: React.ReactNode }) {
+function DatoPie({ icono: Icono, titulo, children }: { icono: Icon; titulo: React.ReactNode; children: React.ReactNode }) {
   return (
     <li className="flex items-start gap-3">
       <span
@@ -54,7 +54,8 @@ function DatoPie({ icono: Icono, titulo, children }: { icono: Icon; titulo: stri
       </span>
       <span className="min-w-0">
         <span className="block font-semibold text-white">{titulo}</span>
-        <span className="block leading-snug">{children}</span>
+        {/* En el celular solo el título: el pie no tiene que ocupar una pantalla */}
+        <span className="hidden sm:block leading-snug">{children}</span>
       </span>
     </li>
   );
@@ -390,14 +391,26 @@ export default function HomePage() {
                 Descuentos bancarios claros para pagar mejor en Mar del Plata.
               </p>
             </div>
-            <ul className="grid sm:grid-cols-3 gap-5 list-none">
+            <ul className="grid sm:grid-cols-3 gap-3 sm:gap-5 list-none">
               <DatoPie icono={ShieldCheck} titulo="Sin registro">
                 No pedimos ni guardamos datos personales.
               </DatoPie>
               <DatoPie icono={DeviceMobile} titulo="En tu dispositivo">
                 Tu billetera y el cálculo quedan en este equipo.
               </DatoPie>
-              <DatoPie icono={ArrowsClockwise} titulo="Promos verificadas">
+              <DatoPie
+              icono={ArrowsClockwise}
+              titulo={
+                ultimaVerificacion ? (
+                  <>
+                    <span className="sm:hidden">Revisadas el {fechaCorta(ultimaVerificacion)}</span>
+                    <span className="hidden sm:inline">Promos verificadas</span>
+                  </>
+                ) : (
+                  "Promos verificadas"
+                )
+              }
+            >
                 {ultimaVerificacion
                   ? `Revisadas en las fuentes oficiales el ${fechaCorta(ultimaVerificacion)}.`
                   : "Revisadas en las fuentes oficiales de cada banco."}

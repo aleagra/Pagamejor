@@ -10,6 +10,7 @@ import {
   comparacionMismoPorcentaje,
   hayVariosPorcentajes,
   metodoPago,
+  nombreCorto,
   nombreVariante,
   resumenComercios,
   resumenTope,
@@ -26,11 +27,6 @@ interface PromoResultCardProps {
   alternativas: GroupedBankPromo[];
   /** Abre el desglose por comercio (hoja en el celular, ventana centrada en escritorio). */
   onAbrir: () => void;
-}
-
-/** "Comercios de cercanía, almacenes y tiendas de barrio" → "Comercios de cercanía": lo justo para el globito. */
-function nombreCorto(nombre: string): string {
-  return nombre.split(/,|\s\(|\s-\s/)[0].trim();
 }
 
 /**
@@ -108,7 +104,7 @@ export const PromoResultCard: React.FC<PromoResultCardProps> = ({ group, banco, 
         </span>
         <span className="flex items-center gap-3 min-w-0 mt-1">
           <BankBadge banco={banco} aro />
-          <span className="display min-w-0 text-[22px] sm:text-[24px] font-semibold leading-tight text-ink">
+          <span className="display min-w-0 text-[20px] min-[400px]:text-[22px] sm:text-[24px] font-semibold leading-tight text-ink">
             {group.bancoBilleteraNombre}
           </span>
         </span>
@@ -123,8 +119,20 @@ export const PromoResultCard: React.FC<PromoResultCardProps> = ({ group, banco, 
         </span>
       </span>
 
-      {/* Acción: abajo y a todo el ancho en el celular, a la derecha desde iPad vertical (800px) */}
-      <span className="[grid-area:accion] flex flex-col items-stretch sm:items-start ipad:items-end justify-center gap-2.5 px-4 pt-4 pb-4 sm:px-6 sm:pt-3 sm:pb-5 ipad:py-4 ipad:pl-0 ipad:pr-6 lg:pr-7">
+      {/* Celular: un pie como el de las otras tarjetas (otros lugares a la izquierda, botón compacto a la derecha) */}
+      <span className="[grid-area:accion] sm:hidden mx-4 mt-3 mb-4 pt-3 border-t border-hairline flex items-center justify-between gap-3">
+        <span className="min-w-0 text-base leading-snug text-ink-2 line-clamp-2">{globitoDetalle}</span>
+        <span
+          data-tour="ver-detalles"
+          className="shrink-0 inline-flex items-center gap-1.5 min-h-11 pl-4 pr-3.5 rounded-full bg-action text-white text-base font-semibold whitespace-nowrap transition-colors duration-200 group-hover:bg-action-strong"
+        >
+          Ver todo
+          <ArrowRight size={17} weight="bold" aria-hidden="true" />
+        </span>
+      </span>
+
+      {/* Tablet y escritorio: globito y botón, debajo de los datos o a la derecha desde iPad vertical (800px) */}
+      <span className="[grid-area:accion] hidden sm:flex flex-col sm:items-start ipad:items-end justify-center gap-2.5 sm:px-6 sm:pt-3 sm:pb-5 ipad:py-4 ipad:pl-0 ipad:pr-6 lg:pr-7">
         {/* Globito que señala el botón: aparece una vez, un instante después de la tarjeta, y queda quieto */}
         <motion.span
           initial={{ opacity: 0, y: 6, scale: 0.96 }}

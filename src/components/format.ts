@@ -69,9 +69,16 @@ export function nombreVariante(v: PromoVariante): string {
   return local ? limpiarComercio(local) : v.etiquetaModalidad;
 }
 
+/** Primer tramo del nombre de un comercio: hasta la primera coma, paréntesis o guion. */
+export function nombreCorto(nombre: string): string {
+  return nombre.split(/,|\s\(|\s-\s/)[0].trim();
+}
+
 /** "Toledo", "Toledo y Coto", "Toledo, Coto y 3 más". */
 export function resumenComercios(variantes: PromoVariante[], maxNombres = 2): string {
-  const nombres = [...new Set(variantes.map(nombreVariante).filter(Boolean))];
+  // En el resumen va el nombre corto ("Comercios de cercanía, almacenes y…" -> "Comercios de cercanía"); el
+  // detalle muestra el completo
+  const nombres = [...new Set(variantes.map((v) => nombreCorto(nombreVariante(v))).filter(Boolean))];
   if (nombres.length <= 1) return nombres[0] ?? "";
   if (nombres.length === 2) return `${nombres[0]} y ${nombres[1]}`;
   const visibles = nombres.slice(0, maxNombres);

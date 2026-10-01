@@ -9,20 +9,20 @@ import type { RecursoPago } from "@/logic/formasPago";
 export const OPCIONES_COMO_PAGO: { id: RecursoPago; titulo: string; detalle: string; icono: Icon }[] = [
   {
     id: "app",
-    titulo: "Con QR o desde la app",
-    detalle: "Escaneando el QR con la app del banco, la billetera o MODO",
+    titulo: "QR o app",
+    detalle: "Con la app del banco, la billetera o MODO",
     icono: QrCode,
   },
   {
     id: "tarjeta",
-    titulo: "Con la tarjeta de plástico",
-    detalle: "Pasándola o apoyándola en el posnet",
+    titulo: "Tarjeta de plástico",
+    detalle: "En el posnet",
     icono: CreditCard,
   },
   {
     id: "nfc",
-    titulo: "Acercando el celular (NFC)",
-    detalle: "Solo celulares Android con NFC y la app configurada",
+    titulo: "Celular con NFC",
+    detalle: "Solo Android, acercándolo al posnet",
     icono: ContactlessPayment,
   },
 ];
@@ -41,13 +41,11 @@ export const ComoPagoSelector: React.FC<ComoPagoSelectorProps> = ({ value, onCha
 
   return (
     <section aria-labelledby="como-pago-title" className="mb-5">
-      <div className="px-2 mb-2">
+      <div className="px-2 mb-2 flex items-baseline justify-between gap-3">
         <h3 id="como-pago-title" className="text-[17px] font-semibold text-ink">
-          ¿Cómo podés pagar?
+          ¿Cómo pagás?
         </h3>
-        <p className="text-base leading-snug text-ink-3">
-          Así solo te recomendamos descuentos que podés usar. Marcá todas las que apliquen.
-        </p>
+        <p className="text-base leading-snug text-ink-3">Marcá todas las que uses</p>
       </div>
       <ul className="bg-canvas rounded-3xl overflow-hidden list-none">
         {OPCIONES_COMO_PAGO.map((op, idx) => {

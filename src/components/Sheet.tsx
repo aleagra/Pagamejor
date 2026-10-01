@@ -151,7 +151,7 @@ export const Sheet: React.FC<SheetProps> = ({
                     {title}
                   </h2>
                   {description && (
-                    <div className="mt-1.5 text-[17px] leading-snug text-ink-2">{description}</div>
+                    <div className="mt-1 text-base sm:text-[17px] leading-snug text-ink-2">{description}</div>
                   )}
                 </div>
                 {dismissible && !cerrarAbajo && (

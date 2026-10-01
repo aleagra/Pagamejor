@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Check, MagnifyingGlass } from "@phosphor-icons/react";
+import { MagnifyingGlass } from "@phosphor-icons/react";
 import { Rubro, RubroId } from "@/data/schema";
 import { Sheet } from "@/components/Sheet";
 import { RubroIcon } from "@/components/RubroIcon";
@@ -55,33 +55,33 @@ export const RubrosModal: React.FC<RubrosModalProps> = ({
       {filteredRubros.length === 0 ? (
         <p className="text-center text-ink-3 py-10 text-lg">No encontramos rubros con &quot;{searchTerm}&quot;.</p>
       ) : (
-        <ul className="bg-canvas rounded-3xl overflow-hidden list-none">
-          {filteredRubros.map((r, idx) => {
+        // Grilla de 2 columnas con el ícono arriba y el nombre abajo: los 12 rubros entran sin bajar
+        <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2 list-none">
+          {filteredRubros.map((r) => {
             const isSelected = r.id === selectedRubro;
             return (
-              <li key={r.id} className="relative">
-                {idx > 0 && <div className="absolute top-0 right-0 left-[72px] h-px bg-hairline" aria-hidden="true" />}
+              <li key={r.id} className="flex">
                 <button
                   type="button"
-                  className="w-full flex items-center gap-4 px-4 py-3 min-h-[68px] text-left hover:bg-fill/60 active:bg-fill transition-colors duration-200"
+                  className={`w-full flex flex-col items-center justify-center gap-1 px-2 py-2 min-h-[76px] rounded-2xl text-center transition-colors duration-200 ${
+                    isSelected ? "bg-action text-white" : "bg-canvas text-ink hover:bg-fill active:bg-fill"
+                  }`}
                   onClick={() => {
                     onSelectRubro(r.id);
                     onClose();
                   }}
                   aria-pressed={isSelected}
+                  title={r.descripcion}
                 >
                   <span
-                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                      isSelected ? "bg-action text-white" : "bg-surface text-ink-2"
+                    className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                      isSelected ? "bg-white/15 text-white" : "bg-surface text-ink-2"
                     }`}
+                    aria-hidden="true"
                   >
-                    <RubroIcon rubro={r.id} size={21} weight={isSelected ? "fill" : "regular"} />
+                    <RubroIcon rubro={r.id} size={20} weight={isSelected ? "fill" : "regular"} />
                   </span>
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-lg font-semibold leading-snug text-ink">{r.nombre}</span>
-                    <span className="text-base leading-snug text-ink-3 line-clamp-1">{r.descripcion}</span>
-                  </span>
-                  {isSelected && <Check size={22} weight="bold" className="shrink-0 text-ink" aria-hidden="true" />}
+                  <span className="max-w-full text-base font-semibold leading-tight [overflow-wrap:anywhere]">{r.nombre}</span>
                 </button>
               </li>
             );

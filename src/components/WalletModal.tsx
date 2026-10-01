@@ -76,7 +76,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
       onClose={onClose}
       dismissible={!isInitialOnboarding}
       title={isInitialOnboarding ? "Te damos la bienvenida" : "Mi billetera"}
-      description="Marcá cómo pagás y qué bancos y billeteras tenés. Solo vas a ver promociones que podés usar."
+      description="Solo vas a ver promociones que podés usar."
       toolbar={
         // Fijo arriba: buscador y cuántos hay elegidos, siempre a la vista
         <div className="flex items-center gap-2.5">
@@ -86,13 +86,13 @@ export const WalletModal: React.FC<WalletModalProps> = ({
             <input
               type="search"
               className="w-full min-h-12 pl-11 pr-4 bg-fill rounded-2xl text-[17px] text-ink placeholder:text-ink-3 focus:bg-surface focus:ring-2 focus:ring-action outline-none transition-colors duration-200"
-              placeholder="Buscar (ej. Galicia, Ualá…)"
+              placeholder="Buscar banco o billetera"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
           </label>
           <span
-            className="shrink-0 min-h-12 px-3.5 inline-flex items-center gap-1.5 rounded-2xl bg-action-soft text-base font-semibold text-ink tabular-nums"
+            className="hidden sm:inline-flex shrink-0 min-h-12 px-3.5 items-center gap-1.5 rounded-2xl bg-action-soft text-base font-semibold text-ink tabular-nums"
             aria-live="polite"
           >
             <Check size={16} weight="bold" aria-hidden="true" />

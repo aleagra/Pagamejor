@@ -50,7 +50,7 @@ function fechaCorta(iso: string): string {
 function IconoMedio({ metodo }: { metodo: MetodoPagoInfo }) {
   const Icon = iconoDeForma(metodo.formas[0]);
   return (
-    <span className="w-11 h-11 rounded-full bg-panel flex items-center justify-center shrink-0 text-ink-2" aria-hidden="true">
+    <span className="hidden sm:flex w-11 h-11 rounded-full bg-panel items-center justify-center shrink-0 text-ink-2" aria-hidden="true">
       <Icon size={21} weight="bold" />
     </span>
   );
@@ -86,7 +86,7 @@ function OpcionRow({
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", bounce: 0.18, duration: 0.5, delay: aparicion ?? 0 }}
     >
-      {separator && <div className="absolute top-0 right-0 left-[60px] h-px bg-hairline" aria-hidden="true" />}
+      {separator && <div className="absolute top-0 right-0 left-0 sm:left-[60px] h-px bg-hairline" aria-hidden="true" />}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

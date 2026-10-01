@@ -144,8 +144,8 @@ export const AlternativePromosList: React.FC<AlternativePromosListProps> = ({ gr
             Otras opciones en tu billetera
           </h2>
           <p className="text-base text-ink-3">
-            {groups.length === 1 ? "1 medio de pago más" : `${groups.length} medios de pago más`}. Tocá uno para ver sus
-            comercios y cómo pagar.
+            {groups.length === 1 ? "1 medio de pago más" : `${groups.length} medios de pago más`}
+            <span className="hidden sm:inline">. Tocá uno para ver sus comercios y cómo pagar</span>.
           </p>
         </div>
 
