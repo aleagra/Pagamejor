@@ -58,7 +58,7 @@
     "colorPrimario": "#118AB2",
     "colorTexto": "#FFFFFF",
     "siglas": "MODO",
-    "nota": "Necesitás una tarjeta de un banco adherido vinculada a MODO. Si tildás un banco adherido (Galicia, Santander, Macro, etc.), las promos de MODO aparecen solas."
+    "nota": "Con una tarjeta de cualquier banco vinculada a la app MODO."
   },
   {
     "id": "personal-pay",
@@ -187,7 +187,7 @@
     "colorPrimario": "#5B2A86",
     "colorTexto": "#FFFFFF",
     "siglas": "YOY",
-    "nota": "Cuenta digital de ICBC. Sus promos de MODO se cobran pagando con MODO.",
+    "nota": "Cuenta digital de ICBC.",
     "adheridoAModo": true
   }
 ]
