@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Instrument_Sans } from "next/font/google";
 import "@/styles/globals.css";
 import { MotionProvider } from "@/components/MotionProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 // Sans cálida y compacta, muy legible en tamaños grandes; igual en todos los dispositivos
 const instrument = Instrument_Sans({
@@ -38,6 +39,8 @@ export default function RootLayout({
         <MotionProvider>
           <div className="min-h-screen flex flex-col">{children}</div>
         </MotionProvider>
+        {/* Visitas anónimas de Vercel (sin cookies ni datos personales); solo envía datos en producción */}
+        <Analytics />
       </body>
     </html>
   );
