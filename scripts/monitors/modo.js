@@ -133,10 +133,12 @@ function rubroDe(card, texto, existente) {
     ['supermercado', /supermercad|coto|jumbo|disco|vea|changomas|toledo|carrefour|dia\b|cooperativa obrera|makro|la anonima|almacen/],
     ['combustible', /combustible|ypf|shell|axion|puma|nafta/],
     ['farmacia', /farmac|perfumer|optica|juleriaque|get the look|simplicity/],
-    ['gastronomia', /restauran|parrilla|helad|gastronom|cafe|burger|mostaza|havanna/],
+    // Cadenas por nombre además de las palabras genéricas: el título de MODO suele traer solo la marca
+    // ("Le Pain Quotidien", "SAO") y sin esto caían en "otros"
+    ['gastronomia', /restauran|parrilla|helad|gastronom|cafe|burger|mostaza|havanna|panader|confiter|bistro|pizz|sushi|le pain|\bsao\b|grido|freddo|fonte d|mcdonald|la cabrera/],
     ['transporte', /transporte|colectivo|\bsube\b|subte|estacionamiento/],
     ['indumentaria', /indumentaria|ropa|calzado|deport/], ['mascotas', /veterinar|pet ?shop|mascota/],
-    ['libreria', /libreri|jugueter/], ['hogar', /hogar|ferreter|corralon|sodimac/],
+    ['libreria', /libreri|jugueter/], ['hogar', /hogar|ferreter|corralon|sodimac|arredo|blanqueri|colchon|bazar/],
   ];
   const hit = reglas.find(([, re]) => re.test(s));
   return { rubro: hit ? hit[0] : 'otros', inferido: true };
@@ -212,6 +214,14 @@ async function auditarMODO() {
     }
     const tyc = tycTexto(b.terms_and_conditions);
     const sch = (b.conditions && b.conditions.schedule) || {};
+    // Exclusivas de un paquete o segmento ("Exclusivo clientes Búho One…", "Excl clientes Payroll"): PagaMejor todavía
+    // no pregunta el paquete de cuenta (mismo criterio que Galicia Éminent y Brubank Plan Ultra)
+    // El aviso suele estar en las preguntas frecuentes (details.faq), no en los T&C. No cuenta si lo exclusivo es solo
+    // un extra ("10% para todos y un 10% extra exclusivo clientes Sorpresa")
+    const faq = b.details && b.details.faq;
+    const textoSegmento = C.norm(`${card.title} ${tycTexto(b.description)} ${tycTexto(typeof faq === 'string' ? faq : JSON.stringify(faq || ''))} ${tyc}`);
+    const exclusivaDe = !/para todos los clientes/.test(textoSegmento) && /(?<!(?:extra|adicional)\s)\bexc(?:lusiv[oa]s?|l\.?|usivo)\s+(?:para\s+)?clientes?\s+([^.,<"]{2,60})/i.exec(textoSegmento);
+    if (exclusivaDe) motivos.push(`Exclusiva para clientes ${exclusivaDe[1].trim()}: PagaMejor todavía no pregunta el paquete de cuenta.`);
 
     // Días
     const dias = (sch.days_of_week || []).map(x => DIA_EN[x]).filter(x => x !== undefined).sort();

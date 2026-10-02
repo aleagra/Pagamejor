@@ -245,7 +245,30 @@ function parseMinimo(texto) {
  * todo lo demás queda inactivo para confirmarlo a mano. Criterio del monitor-agent: revisar la lista
  * cuando aparezcan comercios nuevos.
  */
-const PRESENCIA_MDP = /carrefour|coto|changomas|masgo|la anonima|cooperativa obrera|disco|jumbo|\bvea\b|toledo|makro|\bdia\b|havanna|juleriaque|naldo|samsung|topper|arredo|farmacity|simplicity|get the look|ypf|shell|axion|mostaza|mcdonald|burger king|fravega|garbarino|cetrogar|megatone|on ?city|compumundo|easy|sodimac|mercado libre|rappi|pedidosya|cabify|cinemark|hoyts/i;
+const PRESENCIA_MDP = /carrefour|coto|cooperativa obrera|disco|\bvea\b|toledo|makro|\bdia\b|havanna|juleriaque|naldo|samsung|topper|arredo|farmacity|simplicity|ypf|shell|axion|mostaza|mcdonald|burger king|fravega|garbarino|cetrogar|megatone|on ?city|compumundo|easy|mercado libre|rappi|pedidosya|cabify|cinemark|hoyts/i;
+
+/**
+ * Cadenas SIN locales en Mar del Plata, verificadas a mano en Google Maps (2026-10-02). Las fuentes (incluido el
+ * mapa de MODO) a veces las dan por presentes: ChangoMás cerró en la ciudad y La Anónima, Get The Look, The Food Market, Diarco, Jumbo, MásGO, etc. no
+ * tienen locales. También obras de teatro que ya no están en cartel en MdP ("El secreto" pasó a CABA en abril 2026; Galicia la sigue listando en MdP). Pisan a PRESENCIA_MDP. Si alguna abre (o vuelve) a la ciudad, se saca de esta lista.
+ */
+// "amistad": un solo local franquiciado de DIA (fuera de MdP) que se coló porque el nombre dice "DIA"
+const SIN_PRESENCIA_MDP = /diarco|amistad|\bel secreto\b|la anonima|get the look|the food market|jumbo|\bmas ?go\b|helados daniel|la cabrera|freddo|sodimac|josimar|supercoop|punto mayorista|\bgulf\b|chango ?mas/i;
+
+/**
+ * ¿El texto de locales nombra cadenas sin locales en MdP? 'todos' si todos los comercios nombrados son de esa
+ * lista (la promo no sirve en la ciudad), 'algunos' si se mezclan con otros (hay que sacarlos del texto), null si
+ * ninguno. "Carrefour, Changomás, Día y Coto" → 'algunos'.
+ */
+function sinPresenciaMdp(texto) {
+  const partes = norm(texto || '')
+    .split(/\s*,\s*|\s+y\s+|\s*\/\s*/)
+    .filter(p => /[a-z]/.test(p) && !/^\d+ mas$/.test(p));
+  // La tienda online de una cadena sin locales sí sirve desde Mar del Plata
+  const fuera = partes.filter(p => SIN_PRESENCIA_MDP.test(p) && !/online/.test(p)).length;
+  if (!fuera) return null;
+  return fuera === partes.length ? 'todos' : 'algunos';
+}
 
 // ---------------------------------------------------------------- Salida
 
@@ -273,7 +296,7 @@ module.exports = {
   UA, REPORTS_DIR, MESES, NOMBRES_DIA,
   fetchText, fetchJson, conReintento,
   norm, sinAcentos, slugify, pad, iso, hoyISO, fechaDotNet, finDeMes,
-  PRESENCIA_MDP,
+  PRESENCIA_MDP, SIN_PRESENCIA_MDP, sinPresenciaMdp,
   parseVigenciaTexto, parseDias, diasATexto, parseTope, parseMinimo, gastoOptimo,
   escribirJson, leerJson,
 };

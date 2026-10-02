@@ -85,6 +85,11 @@ async function auditarGalicia() {
     if ((d.modeloAtencion && d.modeloAtencion.exclusivo) || (item.modeloAtencion && item.modeloAtencion.exclusivo)) {
       ignoradas.push({ id: item.id, marca, motivo: `Segmento exclusivo (${(d.modeloAtencion || item.modeloAtencion).nombre})` }); continue;
     }
+    // A veces el segmento no viene marcado "exclusivo" pero el legal lo dice ("…en el País para clientes Éminent";
+    // modeloAtencion "Eminent Black" con exclusivo:false): PagaMejor todavía no pregunta el paquete de cuenta
+    if (/para clientes (eminent|e-?minent|move|prefer)/i.test(C.norm(d.legales || ''))) {
+      ignoradas.push({ id: item.id, marca, motivo: `Segmento exclusivo según el legal (${(d.modeloAtencion && d.modeloAtencion.nombre) || 'Éminent'})` }); continue;
+    }
     if (item.proximamente || d.proximamente) { ignoradas.push({ id: item.id, marca, motivo: 'Próximamente (aún no vigente)' }); continue; }
 
     const motivos = [];

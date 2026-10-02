@@ -20,6 +20,7 @@
     "monitor:bna": "node scripts/monitors/bna.js",
     "monitor:brubank": "node scripts/monitors/brubank.js",
     "monitor:corrientes": "node scripts/monitors/corrientes.js",
+    "monitor:personalpay": "node scripts/monitors/personalpay.js",
     "monitor:status": "node scripts/monitors/monthly-check.js",
     "monitor:all": "node scripts/monitors/monthly-check.js --run",
     "monitor:monthly": "node scripts/monitors/monthly-check.js --run --if-first-business-day",

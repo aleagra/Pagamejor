@@ -99,6 +99,15 @@
     "notas": "Casi todo es de Corrientes y Misiones: solo se cargan las páginas cuya tabla de comercios incluye Mar del Plata. Las bases dicen \"vigentes\" sin fecha de fin: quedan activo:false para verificar. Sus promos vía MODO las cubre MODO."
   },
   {
+    "id": "personalpay",
+    "nombre": "Personal Pay",
+    "url": "https://www.personal.com.ar/pay/beneficios",
+    "metodo": "API JSON pública de la web (/pay/api/benefits y /pay/api/benefits/<id>): listado + detalle con locales geolocalizados",
+    "script": "scripts/monitors/personalpay.js",
+    "manual": false,
+    "notas": "Presencia en MdP por coordenadas de los locales. Solo % sobre el total de la compra (la mayoría son sobre un producto o combo y se ignoran). Niveles sin LVL00 (Todos los usuarios) = segmento, se ignoran. Tope del texto o del nivel con su período; si no hay, activo:false."
+  },
+  {
     "id": "mercadopago-app",
     "nombre": "Mercado Pago (app logueada: 'Explorá tus beneficios')",
     "url": "app Mercado Pago > Explorá tus beneficios",
@@ -110,12 +119,12 @@
   },
   {
     "id": "legacy-manual",
-    "nombre": "Promos manuales sin fuente automatizada (Personal Pay, Banco Provincia)",
+    "nombre": "Promos manuales sin fuente automatizada (Banco Provincia)",
     "url": "capturas propias",
     "metodo": "MANUAL por capturas",
     "script": null,
     "manual": true,
-    "recordatorio": "Personal Pay (personal-pay-*) y Banco Provincia (bapro-indumentaria-vie-sab) no tienen extractor: si siguen siendo de interés, mandá capturas nuevas ese día; sus vigencias (2026-12-31) están sin verificar.",
+    "recordatorio": "Banco Provincia (bapro-*): revisar a mano https://www.bancoprovincia.com.ar/mvc/beneficios. Cada rubro tiene su página (/mvc/banca-personal/<rubro>) y los locales salen de PDFs por marca (/CDN/Get/...) o del buscador de Cuenta DNI (POST /cuentadni/Home/GetLocalesListadoByIdBuscador, filtro localidad \"MAR DEL PLATA\"). Las promos de paquetes (Logros, Solidez, Evolución, Experiencia) no se cargan.",
     "notas": "BBVA bloquea el acceso automático a su web (403): sus promos llegan por MODO y, el resto, por captura. También aplica a bancos sin extractor propio (Santander, Macro, ICBC...) cuyas promos fuera de MODO no se ven."
   }
 ]
