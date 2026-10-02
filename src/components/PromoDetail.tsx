@@ -13,10 +13,12 @@ import {
   formatMoneda,
   formatTope,
   maxPorcentajeDetalle,
+  comerciosVariante,
   metodoPago,
   nombreVariante,
 } from "@/components/format";
 import { MetodoPagoLinea, iconoDeForma } from "@/components/MetodoPago";
+import { comerciosEnMapa, linkMapa } from "@/components/mapas";
 import {
   ArrowSquareOut,
   CalendarBlank,
@@ -24,9 +26,14 @@ import {
   Coins,
   CreditCard,
   HandTap,
+  MapPin,
   Stack,
+  Ticket,
   Timer,
 } from "@phosphor-icons/react";
+
+/** Comercios de una opción agrupada visibles antes de "Ver los N comercios". */
+const LUGARES_VISIBLES = 12;
 
 /** Cantidad de comercios visibles por nivel antes de "Mostrar N más". */
 const VISIBLES_POR_NIVEL = 5;
@@ -46,6 +53,11 @@ function fechaCorta(iso: string): string {
   return d && m && a ? `${d}/${m}/${a}` : iso;
 }
 
+/** "Se puede usar 1 sola vez" / "Se puede usar hasta 3 veces" (límite por persona en toda la vigencia). */
+function textoUsos(limite: number): string {
+  return limite === 1 ? "Se puede usar 1 sola vez" : `Se puede usar hasta ${limite} veces`;
+}
+
 /** Ícono de la forma de pago de la opción (NFC, QR, Clave DNI…). */
 function IconoMedio({ metodo }: { metodo: MetodoPagoInfo }) {
   const Icon = iconoDeForma(metodo.formas[0]);
@@ -63,6 +75,7 @@ function OpcionRow({
   defaultOpen,
   separator,
   aparicion,
+  tourTarget = false,
 }: {
   group: GroupedBankPromo;
   v: PromoVariante;
@@ -71,6 +84,8 @@ function OpcionRow({
   separator: boolean;
   /** Retardo de entrada para las filas que aparecen con "Mostrar más"; sin valor, no se anima. */
   aparicion?: number;
+  /** Primera opción del desglose: la que señala el tutorial ("tocá una opción para ver todo el detalle"). */
+  tourTarget?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   // Se monta al abrir por primera vez (no se arma el detalle de todas las opciones de entrada)
@@ -78,7 +93,20 @@ function OpcionRow({
   if (open && !montado) setMontado(true);
   const panelId = `opcion-${v.id}`;
   const metodo = metodoPago(v.medioPagoDetalle, v.condicionUso, promo?.tipoMedioRequerido);
-  const resumen = [formatTope(v.tipoTope, v.montoTope), v.minimoCompra ? `Mínimo ${formatMoneda(v.minimoCompra)}` : ""]
+  // Lugares: cada comercio con su búsqueda en Maps (los genéricos, como "comercios adheridos", van sin link). Una
+  // opción que junta promos iguales en varios comercios los lista a todos
+  const nombres = comerciosVariante(v);
+  const agrupada = nombres.length > 1;
+  const lugares = agrupada
+    ? nombres.map((n) => ({ nombre: n, mapa: comerciosEnMapa(n)[0] ?? null }))
+    : comerciosEnMapa(nombres[0]).map((c) => ({ nombre: c, mapa: c as string | null }));
+  const [verLugares, setVerLugares] = useState(false);
+  const lugaresVisibles = verLugares ? lugares : lugares.slice(0, LUGARES_VISIBLES);
+  const resumen = [
+    formatTope(v.tipoTope, v.montoTope),
+    v.minimoCompra ? `Mínimo ${formatMoneda(v.minimoCompra)}` : "",
+    promo?.limiteUsos ? (promo.limiteUsos === 1 ? "1 solo uso" : `${promo.limiteUsos} usos`) : "",
+  ]
     .filter(Boolean)
     .join(" · ");
 
@@ -92,6 +120,7 @@ function OpcionRow({
       {separator && <div className="absolute top-0 right-0 left-0 sm:left-[60px] h-px bg-hairline" aria-hidden="true" />}
       <button
         type="button"
+        data-tour={tourTarget ? "opcion" : undefined}
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-controls={panelId}
@@ -156,6 +185,11 @@ function OpcionRow({
                   Hasta el {fechaCorta(promo.vigenciaHasta)}
                 </InfoItem>
               )}
+              {promo?.limiteUsos && (
+                <InfoItem icon={Ticket} label="Cuántas veces">
+                  {textoUsos(promo.limiteUsos)} en toda la promo
+                </InfoItem>
+              )}
               {promo?.niveles && promo.niveles.length > 0 && (
                 <InfoItem icon={Stack} label="Según tu paquete de cuenta">
                   <span className="flex flex-col">
@@ -177,6 +211,50 @@ function OpcionRow({
                 <div className="sm:col-span-2 rounded-2xl bg-surface shadow-[inset_0_0_0_1px_var(--color-hairline)] px-5 py-4">
                   <p className="text-base font-semibold text-ink-2 mb-1.5">A tener en cuenta</p>
                   <p className="text-base leading-relaxed text-ink-3">{v.aclaraciones}</p>
+                </div>
+              )}
+              {/* Dónde queda: búsqueda en Google Maps de cada comercio en Mar del Plata */}
+              {lugares.length > 0 && (
+                <div className="sm:col-span-2">
+                  <InfoItem
+                    icon={MapPin}
+                    label={agrupada ? `Dónde vale: ${nombres.length} comercios en Mar del Plata` : "Dónde queda en Mar del Plata"}
+                  >
+                    <span className="flex flex-wrap gap-2 mt-1.5">
+                      {lugaresVisibles.map(({ nombre, mapa }) =>
+                        mapa ? (
+                          <a
+                            key={nombre}
+                            href={linkMapa(mapa)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Ver ${mapa} en Mar del Plata en Google Maps (se abre en otra pestaña)`}
+                            className="inline-flex items-center gap-2 min-h-12 px-4 rounded-full bg-surface shadow-[inset_0_0_0_1px_var(--color-hairline)] text-base font-semibold text-ink hover:shadow-[inset_0_0_0_1px_var(--color-accent-line)] transition-shadow duration-200"
+                          >
+                            <MapPin size={17} weight="bold" className="text-accent" aria-hidden="true" />
+                            {lugares.length === 1 ? `Ver ${nombre} en el mapa` : nombre}
+                            <ArrowSquareOut size={15} weight="bold" className="text-ink-3" aria-hidden="true" />
+                          </a>
+                        ) : (
+                          <span
+                            key={nombre}
+                            className="inline-flex items-center min-h-12 px-4 rounded-full bg-surface shadow-[inset_0_0_0_1px_var(--color-hairline)] text-base font-semibold text-ink"
+                          >
+                            {nombre}
+                          </span>
+                        ),
+                      )}
+                      {lugares.length > LUGARES_VISIBLES && !verLugares && (
+                        <button
+                          type="button"
+                          onClick={() => setVerLugares(true)}
+                          className="min-h-12 px-4 rounded-full bg-panel text-base font-semibold text-ink hover:bg-fill transition-colors duration-200"
+                        >
+                          Ver los {lugares.length} comercios
+                        </button>
+                      )}
+                    </span>
+                  </InfoItem>
                 </div>
               )}
               {v.fuenteUrl && (
@@ -207,12 +285,13 @@ function NivelSection({
   group: GroupedBankPromo;
   nivel: PromoNivelDescuento;
   promosById: Record<string, Promocion>;
-  /** Posición del nivel, para que las secciones entren en cascada. */
+  /** Posición del nivel, para que las secciones entren en cascada (0 = la primera, donde apunta el tutorial). */
   orden: number;
 }) {
   const [verTodos, setVerTodos] = useState(false);
   const items = verTodos ? nivel.items : nivel.items.slice(0, VISIBLES_POR_NIVEL);
   const ocultos = nivel.items.length - items.length;
+  const lugaresNivel = nivel.items.reduce((n, v) => n + comerciosVariante(v).length, 0);
 
   return (
     <motion.section
@@ -224,7 +303,8 @@ function NivelSection({
       <h3 className="flex items-center gap-2.5 flex-wrap mb-1">
         <DescuentoTag porcentaje={nivel.porcentaje} />
         <span className="text-[17px] font-semibold text-ink">de reintegro</span>
-        {nivel.items.length > 1 && <span className="text-base text-ink-3">· {nivel.items.length} opciones</span>}
+        {/* Cuenta lugares, no filas: una opción agrupada vale en varios comercios */}
+        {lugaresNivel > 1 && <span className="text-base text-ink-3">· {lugaresNivel} lugares</span>}
       </h3>
 
       <ul className="list-none">
@@ -237,6 +317,7 @@ function NivelSection({
             // Todo arranca plegado: de un vistazo se ven todos los lugares con su medio de pago y tope
             defaultOpen={false}
             separator={idx > 0}
+            tourTarget={orden === 0 && idx === 0}
             aparicion={idx >= VISIBLES_POR_NIVEL ? Math.min(idx - VISIBLES_POR_NIVEL, 10) * 0.035 : undefined}
           />
         ))}

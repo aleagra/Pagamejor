@@ -11,7 +11,7 @@ import {
   hayVariosPorcentajes,
   metodoPago,
   nombreCorto,
-  nombreVariante,
+  comerciosVariante,
   resumenComercios,
   resumenTope,
 } from "@/components/format";
@@ -40,16 +40,17 @@ export const PromoResultCard: React.FC<PromoResultCardProps> = ({ group, banco, 
   const metodo = metodoPago(best.medioPagoDetalle, best.condicionUso, best.tipoMedioRequerido);
   // Globito sobre el botón: nombra un lugar concreto que no se ve en la tarjeta ("También 20% en Comercios de
   // cercanía y 4 más"), que invita más a abrir el detalle que un número suelto
-  const nombreArriba = group.variantes[0] ? nombreVariante(group.variantes[0]) : "";
+  // Los comercios de la opción de arriba ya se nombran en la tarjeta (si junta varios, todos ellos)
+  const deArriba = new Set(group.variantes[0] ? comerciosVariante(group.variantes[0]).map(nombreCorto) : []);
   const otros = group.niveles
-    .flatMap((n) => n.items.map((v) => ({ pct: n.porcentaje, nombre: nombreCorto(nombreVariante(v)) })))
-    .filter(
-      (o, i, lista) => o.nombre !== nombreCorto(nombreArriba) && lista.findIndex((x) => x.nombre === o.nombre) === i,
-    );
+    .flatMap((n) => n.items.flatMap((v) => comerciosVariante(v).map((c) => ({ pct: n.porcentaje, nombre: nombreCorto(c) }))))
+    .filter((o, i, lista) => !deArriba.has(o.nombre) && lista.findIndex((x) => x.nombre === o.nombre) === i);
   const globitoDetalle =
     otros.length > 0
       ? `También ${otros[0].pct}% en ${otros[0].nombre}${otros.length > 1 ? ` y ${otros.length - 1} más` : ""}`
-      : group.totalOpciones > 1
+      : deArriba.size > 1
+        ? `Vale en ${deArriba.size} comercios: mirá cuáles`
+        : group.totalOpciones > 1
         ? "Hay más de una forma de pagar"
         : "Revisá cómo se paga y el tope";
   // El botón repite la invitación del globito; la cantidad de lugares la dice el globito

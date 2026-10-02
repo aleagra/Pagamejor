@@ -28,7 +28,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { Sheet } from "@/components/Sheet";
 import { BankBadge } from "@/components/BankBadge";
 import { AvisoComoPago } from "@/components/ComoPago";
-import { TourDetalles, tourDetallesVisto } from "@/components/TourDetalles";
+import { TourDetalles, tourDetallesVisto, type PasoTour } from "@/components/TourDetalles";
 import { useModoLiviano } from "@/components/MotionProvider";
 import { fechaTexto, maxPorcentajeDetalle, nombreDiaSemana } from "@/components/format";
 import { ArrowsClockwise, CalendarBlank, DeviceMobile, ShieldCheck, Wallet, type Icon } from "@phosphor-icons/react";
@@ -113,8 +113,9 @@ export default function HomePage() {
   // así la grilla de resultados no se desarma ni se estira
   const [detalleId, setDetalleId] = useState<string | null>(null);
 
-  // Tutorial de la primera vez: señala "Ver todos los detalles", donde están todos los lugares con descuento
-  const [tourAbierto, setTourAbierto] = useState(false);
+  // Tutorial de la primera vez: señala "Ver todos los detalles" (donde están todos los lugares con descuento) y,
+  // ya en el desglose, pide abrir una opción para ver su detalle completo
+  const [tourPaso, setTourPaso] = useState<PasoTour | null>(null);
 
   const { liviano } = useModoLiviano();
 
@@ -211,13 +212,18 @@ export default function HomePage() {
     setDetalleId(null);
   }, [selectedRubro, dayOffset, selectedBankIds]);
 
+  // Si se cierra el desglose en el paso 2 del tutorial (Escape), el tutorial termina con él
+  useEffect(() => {
+    if (detalleId === null) setTourPaso((p) => (p === "opcion" ? null : p));
+  }, [detalleId]);
+
   // El tutorial aparece una sola vez, cuando ya se ven los resultados, la mejor opción tiene más de una opción y
   // no hay otra ventana abierta. Espera a que terminen las entradas para no tapar la animación
   const hayVentanaAbierta = isWalletModalOpen || isRubrosModalOpen || isOtroDiaOpen || detalleId !== null;
   const mejorConVarias = (recommendation?.bestGroup?.totalOpciones ?? 0) > 1;
   useEffect(() => {
     if (!isLoaded || !mejorConVarias || hayVentanaAbierta || tourDetallesVisto()) return;
-    const t = window.setTimeout(() => setTourAbierto(true), 1400);
+    const t = window.setTimeout(() => setTourPaso("detalles"), 1400);
     return () => window.clearTimeout(t);
   }, [isLoaded, mejorConVarias, hayVentanaAbierta]);
 
@@ -372,15 +378,16 @@ export default function HomePage() {
       {/*
        * Pie: franja de ancho completo en tinta casi negra, así se ve dónde termina la página. La marca y tres
        * datos que dan confianza. Las animaciones se deciden solas (modo liviano automático).
-       * Aparece recién cuando están los resultados, y un instante después que ellos: si se mostrara antes, se vería
-       * arriba (con la página todavía vacía) y después saltaría hacia abajo.
+       * Aparece junto con los resultados (si se mostrara antes, se vería arriba con la página todavía vacía y
+       * después saltaría hacia abajo). Sin retardo: las entradas de las tarjetas usan transform, así que el pie ya
+       * queda en su lugar definitivo desde el primer cuadro.
        */}
       {isLoaded && (
         <motion.footer
           className="bg-pie text-base text-white/70"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.55 }}
+          transition={{ duration: 0.25 }}
         >
           <div className={`${CONTENEDOR} py-10 grid gap-8 tab:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]`}>
             <div>
@@ -454,14 +461,14 @@ export default function HomePage() {
 
       {recommendation?.bestGroup && (
         <TourDetalles
-          isOpen={tourAbierto}
+          paso={tourPaso}
           banco={recommendation.bestGroup.bancoBilleteraNombre}
           opciones={recommendation.bestGroup.totalOpciones}
           onVer={() => {
-            setTourAbierto(false);
+            setTourPaso("opcion");
             setDetalleId(recommendation.bestGroup!.bancoBilleteraId);
           }}
-          onCerrar={() => setTourAbierto(false)}
+          onCerrar={() => setTourPaso(null)}
         />
       )}
 

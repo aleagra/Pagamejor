@@ -12,6 +12,7 @@ import {
   comparacionMismoPorcentaje,
   hayVariosPorcentajes,
   metodoPago,
+  cantidadOpciones,
   resumenComercios,
   resumenTope,
 } from "@/components/format";
@@ -55,7 +56,7 @@ function Tarjeta({
   // Todos los lugares del banco (de mayor a menor reintegro), para que no parezca que es uno solo
   const comercios = resumenComercios(g.variantes, 1);
   const metodo = metodoPago(g.bestPromo.medioPagoDetalle, g.bestPromo.condicionUso, g.bestPromo.tipoMedioRequerido);
-  const opciones = g.totalOpciones === 1 ? "1 opción" : `${g.totalOpciones} opciones`;
+  const opciones = cantidadOpciones(g.variantes);
   const nota = comparacion ? COMPARACION[comparacion.tipo] : null;
 
   return (

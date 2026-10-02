@@ -63,10 +63,17 @@ export function limpiarComercio(texto: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/** Nombre corto de un comercio o modalidad de la variante. */
-export function nombreVariante(v: PromoVariante): string {
+/** Comercios de la variante: uno, o todos los de una opción que junta promos iguales en distintos comercios. */
+export function comerciosVariante(v: PromoVariante): string[] {
+  if (v.comercios?.length) return v.comercios.map(limpiarComercio);
   const local = v.localesAdheridos?.trim();
-  return local ? limpiarComercio(local) : v.etiquetaModalidad;
+  return [local ? limpiarComercio(local) : v.etiquetaModalidad];
+}
+
+/** Nombre de la variante: el comercio, o "AMULETTO, M JEANS, Express y 30 más" si junta varios. */
+export function nombreVariante(v: PromoVariante): string {
+  const nombres = comerciosVariante(v);
+  return nombres.length > 1 ? listarNombres(nombres, 3) : nombres[0];
 }
 
 /** Primer tramo del nombre de un comercio: hasta la primera coma, paréntesis o guion. */
@@ -75,15 +82,30 @@ export function nombreCorto(nombre: string): string {
 }
 
 /** "Toledo", "Toledo y Coto", "Toledo, Coto y 3 más". */
-export function resumenComercios(variantes: PromoVariante[], maxNombres = 2): string {
-  // En el resumen va el nombre corto ("Comercios de cercanía, almacenes y…" -> "Comercios de cercanía"); el
-  // detalle muestra el completo
-  const nombres = [...new Set(variantes.map((v) => nombreCorto(nombreVariante(v))).filter(Boolean))];
+function listarNombres(nombres: string[], maxNombres: number): string {
   if (nombres.length <= 1) return nombres[0] ?? "";
   if (nombres.length === 2) return `${nombres[0]} y ${nombres[1]}`;
   const visibles = nombres.slice(0, maxNombres);
   const resto = nombres.length - visibles.length;
-  return `${visibles.join(", ")} y ${resto} más`;
+  return resto > 0 ? `${visibles.join(", ")} y ${resto} más` : `${visibles.slice(0, -1).join(", ")} y ${visibles.at(-1)}`;
+}
+
+/**
+ * "1 opción", "3 opciones" o, si las opciones juntan varios comercios, "13 lugares" (Banco Provincia: una sola
+ * opción del 10% en 13 marcas de indumentaria).
+ */
+export function cantidadOpciones(variantes: PromoVariante[]): string {
+  const lugares = new Set(variantes.flatMap((v) => comerciosVariante(v))).size;
+  if (lugares > variantes.length) return `${lugares} lugares`;
+  return variantes.length === 1 ? "1 opción" : `${variantes.length} opciones`;
+}
+
+/** "Toledo", "Toledo y Coto", "Toledo, Coto y 3 más" con todos los comercios de las variantes. */
+export function resumenComercios(variantes: PromoVariante[], maxNombres = 2): string {
+  // En el resumen va el nombre corto ("Comercios de cercanía, almacenes y…" -> "Comercios de cercanía"); el
+  // detalle muestra el completo
+  const nombres = [...new Set(variantes.flatMap((v) => comerciosVariante(v).map(nombreCorto)).filter(Boolean))];
+  return listarNombres(nombres, maxNombres);
 }
 
 /** Tope del mejor nivel del grupo, para la línea de resumen. */
