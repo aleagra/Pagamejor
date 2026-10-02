@@ -29,6 +29,11 @@ export interface PromoVariante {
   condicionUso: string;
   aclaraciones: string;
   fuenteUrl: string;
+  /**
+   * Varias promos con las mismas condiciones en distintos comercios (Galicia: 20% los viernes en 33 marcas) van en
+   * una sola opción: acá están todos los comercios, en orden. Sin el campo, la opción es de un solo comercio.
+   */
+  comercios?: string[];
 }
 
 export interface PromoNivelDescuento {

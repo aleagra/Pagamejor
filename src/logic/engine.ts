@@ -62,6 +62,53 @@ function getVarianteLabel(promo: Promocion, allInBank: Promocion[]): string {
   return promo.medioPagoDetalle || "Pago con QR / Tarjeta";
 }
 
+/** Todo lo que cambia la promo para quien paga; si coincide, solo cambia el comercio. */
+function claveCondiciones(p: Promocion): string {
+  return [
+    p.porcentajeDescuento,
+    p.tipoTope,
+    p.montoTope ?? "",
+    p.minimoCompra ?? "",
+    p.limiteUsos ?? "",
+    p.tipoMedioRequerido,
+    p.medioPagoDetalle.trim(),
+    p.condicionUso.trim(),
+    [...p.diasSemana].sort().join(""),
+    p.vigenciaHasta,
+    p.alcanceLimitado ? "limitado" : "",
+    p.niveles ? JSON.stringify(p.niveles) : "",
+  ].join("|");
+}
+
+/**
+ * Junta en una sola opción las promos de un banco que tienen exactamente las mismas condiciones en distintos
+ * comercios (Galicia publica una promo por marca: 33 filas iguales). Respeta el orden recibido: la opción queda en
+ * el lugar de su mejor promo y los comercios en el orden en que venían.
+ */
+function agruparPorCondiciones(promos: Promocion[]): Promocion[][] {
+  const grupos = new Map<string, Promocion[]>();
+  for (const p of promos) {
+    const clave = claveCondiciones(p);
+    const lista = grupos.get(clave);
+    if (lista) lista.push(p);
+    else grupos.set(clave, [p]);
+  }
+  return [...grupos.values()];
+}
+
+/**
+ * Las aclaraciones de cada promo suelen repetir el comercio ("20% de ahorro viernes en AMULETTO. Sin tope."): si
+ * quitando el nombre son todas iguales, queda una sola, sin nombre. Si dicen cosas distintas, no se muestra ninguna
+ * (lo particular de cada comercio está en su fuente).
+ */
+function aclaracionComun(promos: Promocion[]): string {
+  const sinNombre = promos.map((p) => {
+    const local = p.localesAdheridos.trim();
+    return local ? p.aclaraciones.split(local).join("estos comercios") : p.aclaraciones;
+  });
+  return sinNombre.every((a) => a === sinNombre[0]) ? sinNombre[0] : "";
+}
+
 /**
  * Agrupa las opciones de una entidad por porcentaje de descuento para evitar repetición
  */
@@ -188,20 +235,26 @@ export function findBestPromos(
     // "Hasta X%" con lo que sirve en cualquier lado; una feria puntual al 40% no infla el número del banco
     const maxPorcentaje = maxPorcentajeGeneral(promosList);
 
-    const variantes: PromoVariante[] = promosList.map((p) => ({
-      id: p.id,
-      etiquetaModalidad: getVarianteLabel(p, promosList),
-      porcentajeDescuento: p.porcentajeDescuento,
-      tipoTope: p.tipoTope,
-      montoTope: p.montoTope,
-      montoGastoOptimo: p.montoGastoOptimo,
-      minimoCompra: p.minimoCompra,
-      medioPagoDetalle: p.medioPagoDetalle,
-      localesAdheridos: p.localesAdheridos,
-      condicionUso: p.condicionUso,
-      aclaraciones: p.aclaraciones,
-      fuenteUrl: p.fuenteUrl,
-    }));
+    // Una opción por conjunto de condiciones: las promos iguales en distintos comercios van juntas
+    const variantes: PromoVariante[] = agruparPorCondiciones(promosList).map((iguales) => {
+      const p = iguales[0];
+      const varios = iguales.length > 1;
+      return {
+        id: p.id,
+        etiquetaModalidad: getVarianteLabel(p, promosList),
+        porcentajeDescuento: p.porcentajeDescuento,
+        tipoTope: p.tipoTope,
+        montoTope: p.montoTope,
+        montoGastoOptimo: p.montoGastoOptimo,
+        minimoCompra: p.minimoCompra,
+        medioPagoDetalle: p.medioPagoDetalle,
+        localesAdheridos: p.localesAdheridos,
+        condicionUso: p.condicionUso,
+        aclaraciones: varios ? aclaracionComun(iguales) : p.aclaraciones,
+        fuenteUrl: p.fuenteUrl,
+        ...(varios && { comercios: [...new Set(iguales.map((x) => x.localesAdheridos.trim()).filter(Boolean))] }),
+      };
+    });
 
     const niveles = buildNivelesDescuento(variantes);
 
