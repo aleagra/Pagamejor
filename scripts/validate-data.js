@@ -1,6 +1,8 @@
 // Script de auditoría y validación del data-agent
 const fs = require('fs');
 const path = require('path');
+const { sinPresenciaMdp } = require('./monitors/utils/common.js');
+const { nombreCanonico } = require('./data/nombres.js');
 
 const bancosPath = path.join(__dirname, '../src/data/bancos.json');
 const rubrosPath = path.join(__dirname, '../src/data/rubros.json');
@@ -22,6 +24,8 @@ console.log(`Rubros cargados: ${rubros.length}`);
 console.log(`Promociones a validar: ${promos.length}\n`);
 
 const sinComercio = [];
+const mezclaSinMdp = [];
+const sinNormalizar = [];
 promos.forEach((promo, idx) => {
   const prefix = `[Promo #${idx + 1} ID: "${promo.id}"]`;
 
@@ -87,6 +91,11 @@ promos.forEach((promo, idx) => {
     errors.push(`${prefix} activo:false exige una nota en aclaraciones explicando el motivo.`);
   }
 
+  // 9a. limiteUsos: usos por persona en toda la vigencia, entero positivo (sin el campo = ilimitados)
+  if (promo.limiteUsos !== undefined && !(Number.isInteger(promo.limiteUsos) && promo.limiteUsos > 0)) {
+    errors.push(`${prefix} limiteUsos debe ser un entero positivo (o no estar).`);
+  }
+
   // 9b. alcanceLimitado: solo booleano (promos de lugares puntuales, que no deben quedar primeras)
   if (promo.alcanceLimitado !== undefined && typeof promo.alcanceLimitado !== 'boolean') {
     errors.push(`${prefix} alcanceLimitado debe ser true o false.`);
@@ -95,6 +104,19 @@ promos.forEach((promo, idx) => {
   // 9c. El comercio tiene que nombrar el lugar, no ser un texto publicitario ("Todos los días pagando con…")
   if (promo.activo && /^(todos los|todas las|disfrut|pag[aá]\b|pagando|v[aá]lid|con tu|los (lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bados|domingos))/i.test((promo.localesAdheridos || '').trim())) {
     sinComercio.push(promo.id);
+  }
+
+  // 9d. Solo Mar del Plata: nada activo en cadenas sin locales en la ciudad (SIN_PRESENCIA_MDP, verificadas en Maps)
+  const fueraMdp = promo.activo ? sinPresenciaMdp(promo.localesAdheridos) : null;
+  if (fueraMdp === 'todos') {
+    errors.push(`${prefix} "${promo.localesAdheridos}" no tiene locales en Mar del Plata (SIN_PRESENCIA_MDP): debe quedar activo:false.`);
+  } else if (fueraMdp === 'algunos') {
+    mezclaSinMdp.push(promo.id);
+  }
+
+  // 9e. Nombre canónico del comercio (scripts/data/nombres.js): apply-extract lo aplica; si no, se avisa
+  if (promo.activo && nombreCanonico(promo.localesAdheridos).nombre !== promo.localesAdheridos) {
+    sinNormalizar.push(`${promo.id} ("${promo.localesAdheridos}" → "${nombreCanonico(promo.localesAdheridos).nombre}")`);
   }
 
   // 10. Niveles de cuenta/cliente (Patagonia, Supervielle)
@@ -131,6 +153,8 @@ const vencidasActivas = promos.filter(p => p.activo && p.vigenciaHasta < hoy);
 const porVencer = promos.filter(p => p.activo && p.vigenciaHasta >= hoy && p.vigenciaHasta <= en7);
 if (vencidasActivas.length) console.warn(`⚠️  ${vencidasActivas.length} promos activas con vigencia vencida (el engine las oculta): ${vencidasActivas.map(p => p.id).join(', ')}`);
 if (sinComercio.length) console.warn(`⚠️  ${sinComercio.length} promos activas sin el nombre del comercio en localesAdheridos (texto publicitario): ${sinComercio.join(', ')}`);
+if (mezclaSinMdp.length) console.warn(`⚠️  ${mezclaSinMdp.length} promos activas nombran cadenas sin locales en Mar del Plata junto con otras (sacarlas de localesAdheridos): ${mezclaSinMdp.join(', ')}`);
+if (sinNormalizar.length) console.warn(`⚠️  ${sinNormalizar.length} promos activas con el nombre del comercio sin normalizar: ${sinNormalizar.join(', ')}`);
 if (porVencer.length) console.warn(`⚠️  ${porVencer.length} promos activas vencen en los próximos 7 días.`);
 
 if (errors.length > 0) {

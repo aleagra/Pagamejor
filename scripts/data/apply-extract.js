@@ -18,6 +18,8 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { sinPresenciaMdp } = require('../monitors/utils/common.js');
+const { nombreCanonico, notaCuotas } = require('./nombres.js');
 
 const ROOT = path.join(__dirname, '../..');
 const PROMOS_PATH = path.join(ROOT, 'src/data/promos.json');
@@ -45,7 +47,7 @@ const catalogo = JSON.parse(fs.readFileSync(PROMOS_PATH, 'utf8'));
 const hoy = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
 
 const limpiar = p => Object.fromEntries(Object.entries(p).filter(([k]) => !k.startsWith('_')));
-const ESTRUCTURALES = ['bancoBilleteraId', 'bancoBilleteraNombre', 'porcentajeDescuento', 'niveles', 'tipoTope', 'montoTope', 'minimoCompra', 'montoGastoOptimo', 'vigenciaDesde', 'vigenciaHasta', 'diasSemana', 'diasTexto', 'activo', 'fuenteId', 'ultimaVerificacion', 'fuenteUrl', 'rubro', 'tipoMedioRequerido'];
+const ESTRUCTURALES = ['bancoBilleteraId', 'bancoBilleteraNombre', 'porcentajeDescuento', 'niveles', 'tipoTope', 'montoTope', 'minimoCompra', 'montoGastoOptimo', 'limiteUsos', 'vigenciaDesde', 'vigenciaHasta', 'diasSemana', 'diasTexto', 'activo', 'fuenteId', 'ultimaVerificacion', 'fuenteUrl', 'rubro', 'tipoMedioRequerido'];
 const RELEVANTES = ['porcentajeDescuento', 'niveles', 'tipoTope', 'montoTope', 'minimoCompra', 'diasSemana', 'activo'];
 const TEXTOS = ['condicionUso', 'aclaraciones', 'localesAdheridos', 'medioPagoDetalle'];
 const igual = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -86,6 +88,27 @@ if (desactivarFaltantes) {
     p.aclaraciones = `No figura en la fuente oficial al ${hoy}; desactivada hasta poder verificarla (si sigue vigente en la app, reactivar con captura). ${p.aclaraciones || ''}`.trim();
     log.desactivadas.push(p.id);
   }
+}
+
+// Nombre del comercio siempre igual ("Coto", no "Supermercados COTO" ni "5% adicional en COTO con…") y sin las
+// cuotas sin interés pegadas ("10% y 6 CSI en Juleriaque"): las cuotas pasan a aclaraciones
+for (const p of catalogo) {
+  const { nombre, cuotas } = nombreCanonico(p.localesAdheridos);
+  if (nombre !== p.localesAdheridos) {
+    p.aclaraciones = (p.aclaraciones || '').split(p.localesAdheridos.trim()).join(nombre);
+    p.localesAdheridos = nombre;
+  }
+  const nota = notaCuotas(cuotas, p.aclaraciones);
+  if (nota) p.aclaraciones = `${p.aclaraciones} ${nota}`.trim();
+}
+
+// Solo Mar del Plata: aunque la fuente la dé por presente (ej. el mapa de MODO), una cadena sin locales en la
+// ciudad (SIN_PRESENCIA_MDP) no se activa
+for (const p of catalogo) {
+  if (!p.activo || sinPresenciaMdp(p.localesAdheridos) !== 'todos') continue;
+  p.activo = false;
+  p.aclaraciones = `Sin locales en Mar del Plata (SIN_PRESENCIA_MDP en scripts/monitors/utils/common.js). ${p.aclaraciones || ''}`.trim();
+  log.desactivadas.push(p.id);
 }
 
 console.log(`[data-agent] ${fuenteId}: ${log.nuevas.length} nuevas, ${log.actualizadas.length} actualizadas, ${log.confirmadas.length} solo re-verificadas, ${log.desactivadas.length} desactivadas.`);

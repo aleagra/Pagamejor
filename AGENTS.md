@@ -70,6 +70,7 @@ Cada fuente tiene su método; la fuente de verdad es `scripts/monitors/sources.j
 9. **`bna.js`**: API JSON pública de semananacion.com.ar (promos + comercios adheridos con domicilio para verificar MdP). Tope siempre del texto legal.
 10. **`brubank.js`**: listado estático + bases en help.brubank.com (plan, días, tope, vigencia y anexo de locales). Plan Plus/Ultra → `activo:false`.
 11. **`corrientes.js`**: HTML público de promosdelbanco.com; solo páginas cuya tabla de comercios incluye Mar del Plata.
+12. **`personalpay.js`**: API JSON pública de la web (listado + detalle con locales geolocalizados). Solo % sobre el total de la compra con locales en MdP; los descuentos por producto o combo se ignoran.
 - **BBVA** bloquea el acceso automático (403): no se saltea esa protección; sus promos llegan por MODO y por captura.
 - **MODO** recorre todas las secciones que publica la web y cada una filtrada por banco (sin el filtro por banco se pierden promos).
 - **`monthly-check.js`**: checklist con la última verificación de cada fuente, recordatorios de las fuentes manuales y corrida mensual (`npm run monitor:monthly`, `monitor:all`, `monitor:status`).
@@ -77,12 +78,14 @@ Cada fuente tiene su método; la fuente de verdad es `scripts/monitors/sources.j
 
 ### Regla de Alcance Geográfico
 Solo se cargan/activan promos que apliquen en **Mar del Plata**. Las de otras provincias se excluyen o quedan `activo:false` con nota. Donde la fuente no informa sucursales (Patagonia, Naranja X, Supervielle) solo se activan cadenas de presencia nacional (`PRESENCIA_MDP` en `utils/common.js`).
+Las cadenas verificadas en Google Maps **sin** locales en MdP (ChangoMás, La Anónima, Get The Look, The Food Market, Diarco, Jumbo, MásGO…) van en `SIN_PRESENCIA_MDP`: pisan a cualquier fuente (el mapa de MODO se equivoca), `apply-extract` las deja `activo:false` y `validate-data` falla si alguna queda activa. Para verificar un comercio nuevo: abrir la búsqueda "<comercio>, Mar del Plata" en Maps (el link del acordeón) y ver si algún resultado **no patrocinado** lleva ese nombre.
 
 ### Aplicación de Reportes (`data-agent`)
 Tras aprobar el reporte: `node scripts/data/apply-extract.js <fuenteId> [--dry] [--deactivate-missing] [--only=ids]`. Actualiza los campos estructurados de `promos.json`, conserva los textos curados y corre `validate-data`.
 
 ### Protocolo de Datos y Reportes:
 - Los scripts **NUNCA** modifican `src/data/promos.json` de forma directa.
+- **Un comercio por promo**: si la fuente nombra los comercios, cada uno es una promo propia (`localesAdheridos` = ese comercio), así se verifica en MdP, se busca en Maps y se desactiva por separado. El texto genérico ("Comercios adheridos…") queda solo cuando la fuente no da nombres. La pantalla junta en una sola opción las promos de un banco con las mismas condiciones (`agruparPorCondiciones` en `src/logic/engine.ts`).
 - Generan reportes de diferencias estructurados en `scripts/reports/<fuente>-report.json` categorizando:
   - Promociones vigentes confirmadas
   - Modificaciones detectadas (cambio de tope o porcentaje)

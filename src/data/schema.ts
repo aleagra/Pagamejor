@@ -105,6 +105,10 @@ export interface Promocion {
   tipoTope: TipoTope;
   montoTope: number | null; // en ARS, null si sin_tope
 
+  // Cuántas veces se puede usar por persona en toda la vigencia ("Limitado a 1 uso", "Máximo 2 vouchers").
+  // Sin el campo: la fuente no limita los usos (o dice "Usos ilimitados")
+  limiteUsos?: number;
+
   // Requisitos de ticket
   minimoCompra: number | null; // en ARS, null si no hay mínimo
   montoGastoOptimo: number | null; // Gasto ideal para aprovechar el tope al 100%
